@@ -1,0 +1,34 @@
+.checkout-page {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+}
+
+.checkout-placeholder {
+    text-align: center;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 60px 24px;
+}
+
+.checkout-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.checkout-placeholder h1 {
+    font-size: var(--font-size-3xl);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.checkout-placeholder p {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.checkout-sub {
+    color: #aaa !important;
+    font-size: 13px !important;
+}
