@@ -18,10 +18,18 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Handle 401 responses
+// Handle response errors
 api.interceptors.response.use(
     (response) => response,
     (error) => {
+        console.error('🌐 Admin API Error:', {
+            url: error.config?.url,
+            method: error.config?.method,
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message
+        });
+
         if (error.response?.status === 401) {
             localStorage.removeItem('admin_token');
             if (window.location.pathname !== '/login') {

@@ -18,6 +18,21 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Add response error logging
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        console.error('🌐 API Error:', {
+            url: error.config?.url,
+            method: error.config?.method,
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message
+        });
+        return Promise.reject(error);
+    }
+);
+
 // Auth APIs
 export const authAPI = {
     register: (data) => api.post('/auth/register', data),
