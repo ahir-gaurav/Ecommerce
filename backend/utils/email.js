@@ -5,18 +5,21 @@ dotenv.config();
 
 // Create transporter
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: parseInt(process.env.EMAIL_PORT),
-  secure: process.env.EMAIL_PORT == 465, // true for 465, false for other ports
+  host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
+  port: parseInt(process.env.EMAIL_PORT) || 587,
+  secure: false, // Brevo uses STARTTLS on port 587 (not SSL)
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
   },
+  pool: true,         // Use connection pool (better for serverless/Render)
+  maxConnections: 1,  // Single connection avoids Brevo rate limits
   tls: {
-    rejectUnauthorized: false // Helps with some hosting environments
+    rejectUnauthorized: false
   },
-  connectionTimeout: 10000,  // Fail fast on Render cold starts (10s)
-  greetingTimeout: 10000
+  connectionTimeout: 30000,  // 30s — Brevo may be slow on first connect from Render
+  greetingTimeout: 30000,
+  socketTimeout: 30000
 });
 
 // Helper: get trimmed EMAIL_FROM (avoids SMTP rejection from trailing spaces)
