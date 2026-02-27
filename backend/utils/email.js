@@ -1,17 +1,19 @@
 ﻿import { BrevoClient } from '@getbrevo/brevo';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-// Brevo HTTP API client (HTTP-based, not SMTP — works on Render)
-const brevo = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
 
 const SENDER_EMAIL = process.env.EMAIL_USER || 'iamgauravyaduvanshi@gmail.com';
 const SENDER_NAME = "Kicks Don't Stink";
 const LOGO_URL = 'https://i.ibb.co/YBntQvVb/logo.png';
 
+// Lazy-initialize client so it always reads BREVO_API_KEY at call time (not import time)
+const getBrevoClient = () => {
+  const key = process.env.BREVO_API_KEY;
+  if (!key) throw new Error('BREVO_API_KEY is not set in environment variables');
+  return new BrevoClient({ apiKey: key });
+};
+
 // Helper to send email
 const sendEmail = async (to, subject, htmlContent) => {
+  const brevo = getBrevoClient();
   const result = await brevo.transactionalEmails.sendTransacEmail({
     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
     to: [{ email: to }],

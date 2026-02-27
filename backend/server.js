@@ -1,7 +1,7 @@
+import 'dotenv/config'; // MUST be first — loads .env before any module initializes
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -19,16 +19,14 @@ import heroRoutes from './routes/hero.js';
 // Import cron jobs
 import './cron/analytics.js';
 
-// Load environment variables
-dotenv.config();
-
 // Critical Environment Variable Check
-const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'EMAIL_USER', 'EMAIL_PASSWORD', 'USER_FRONTEND_URL', 'ADMIN_FRONTEND_URL'];
+const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'BREVO_API_KEY', 'EMAIL_USER', 'USER_FRONTEND_URL', 'ADMIN_FRONTEND_URL'];
 requiredEnvVars.forEach(varName => {
     if (!process.env[varName]) {
         console.warn(`⚠️ Warning: Environment variable ${varName} is missing!`);
     }
 });
+console.log('✅ BREVO_API_KEY loaded:', process.env.BREVO_API_KEY ? 'YES' : '❌ MISSING');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

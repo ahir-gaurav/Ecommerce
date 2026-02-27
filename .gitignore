@@ -8,3 +8,4 @@ build/
 uploads/
 .vscode/
 .idea/
+backend/test-output.txt
