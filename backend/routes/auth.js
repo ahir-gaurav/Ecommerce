@@ -46,10 +46,10 @@ router.post('/register', [
         // Generate and send OTP
         const otpCode = OTP.generateOTP();
         await OTP.create({ email, otp: otpCode, purpose: 'registration' });
+        console.log(`🔑 OTP for ${email}: ${otpCode}`); // visible in Render logs
 
         const emailSent = await sendOTP(email, otpCode, 'registration');
         if (!emailSent) {
-            // Log the failure but DO NOT block the user — account is created, they can resend OTP
             console.error(`❌ Failed to send registration OTP to ${email} — user can resend from OTP page`);
         }
 
