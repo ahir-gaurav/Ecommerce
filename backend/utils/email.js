@@ -1,40 +1,15 @@
-﻿import nodemailer from 'nodemailer';
+﻿import { Resend } from 'resend';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Create transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
-  port: parseInt(process.env.EMAIL_PORT) || 587,
-  secure: false, // Brevo uses STARTTLS on port 587 (not SSL)
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  },
-  pool: true,         // Use connection pool (better for serverless/Render)
-  maxConnections: 1,  // Single connection avoids Brevo rate limits
-  tls: {
-    rejectUnauthorized: false
-  },
-  connectionTimeout: 30000,  // 30s — Brevo may be slow on first connect from Render
-  greetingTimeout: 30000,
-  socketTimeout: 30000
-});
+// Create Resend client
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Helper: get trimmed EMAIL_FROM (avoids SMTP rejection from trailing spaces)
-const EMAIL_FROM = (process.env.EMAIL_FROM || '').trim();
+// Helper: get trimmed EMAIL_FROM
+const EMAIL_FROM = (process.env.EMAIL_FROM || 'onboarding@resend.dev').trim();
 
-// Verify transporter on startup
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ SMTP Transporter Error:', error);
-  } else {
-    console.log('✅ SMTP Server is ready to take our messages');
-  }
-});
-
-// Logo URL served from backend static files
+// Logo URL
 const LOGO_URL = 'https://i.ibb.co/YBntQvVb/logo.png';
 
 // Send OTP email
@@ -87,19 +62,23 @@ export const sendOTP = async (email, otp, purpose) => {
 
   try {
     console.log(`📧 Attempting to send OTP to ${email}...`);
-    const info = await transporter.sendMail({
+    const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: email,
       subject,
       html
     });
-    console.log(`✅ Email sent: ${info.messageId}`);
+
+    if (error) {
+      console.error('❌ Resend error:', error);
+      return false;
+    }
+
+    console.log(`✅ Email sent via Resend: ${data.id}`);
     return true;
   } catch (error) {
-    console.error('❌ Email sending error details:', {
+    console.error('❌ Email sending error:', {
       error: error.message,
-      code: error.code,
-      command: error.command,
       recipient: email
     });
     return false;
@@ -159,12 +138,19 @@ export const sendOrderConfirmation = async (email, orderData) => {
   `;
 
   try {
-    await transporter.sendMail({
+    const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: email,
       subject: `Order Confirmation - ${orderData.orderNumber}`,
       html
     });
+
+    if (error) {
+      console.error('❌ Resend order confirmation error:', error);
+      return false;
+    }
+
+    console.log(`✅ Order confirmation sent: ${data.id}`);
     return true;
   } catch (error) {
     console.error('Email sending error:', error);
@@ -194,17 +180,21 @@ export const sendAdminAlert = async (subject, message) => {
   `;
 
   try {
-    await transporter.sendMail({
+    const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
-      to: process.env.EMAIL_USER, // Send to admin email
+      to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
       subject: `[ALERT] ${subject}`,
       html
     });
+
+    if (error) {
+      console.error('❌ Resend admin alert error:', error);
+      return false;
+    }
+
     return true;
   } catch (error) {
     console.error('Email sending error:', error);
     return false;
   }
 };
-
-export default transporter;
