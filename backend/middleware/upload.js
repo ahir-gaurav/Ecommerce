@@ -1,66 +1,35 @@
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
-// Storage configuration for product images
-const imageStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../uploads/images'));
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
+// Export cloudinary instance for use in routes (e.g. delete)
+export { cloudinary };
+
+// Cloudinary storage for product images
+const imageStorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'kicks-dont-stink/products',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto' }]
     }
 });
 
-// Storage configuration for 3D models
-const modelStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../uploads/models'));
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'model-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-// File filter for images
-const imageFilter = (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-
-    if (extname && mimetype) {
-        cb(null, true);
-    } else {
-        cb(new Error('Only image files (JPEG, PNG, WebP) are allowed'));
-    }
-};
-
-// File filter for 3D models
-const modelFilter = (req, file, cb) => {
-    const allowedTypes = /glb|gltf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-
-    if (extname) {
-        cb(null, true);
-    } else {
-        cb(new Error('Only 3D model files (GLB, GLTF) are allowed'));
-    }
-};
-
-// Upload middleware
+// Upload middleware — stores directly to Cloudinary, no local disk
 export const uploadImages = multer({
     storage: imageStorage,
-    fileFilter: imageFilter,
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 }).array('images', 5);
 
+// Keep model upload using memory storage (not used in production critical path)
 export const uploadModel = multer({
-    storage: modelStorage,
-    fileFilter: modelFilter,
-    limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 }
 }).single('model');

@@ -1,7 +1,7 @@
 import express from 'express';
 import Product from '../models/Product.js';
 import { verifyToken, requireAdmin } from '../middleware/auth.js';
-import { uploadImages, uploadModel } from '../middleware/upload.js';
+import { uploadImages, uploadModel, cloudinary } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -127,7 +127,8 @@ router.post('/:id/images', verifyToken, requireAdmin, (req, res) => {
             }
 
             const newImages = req.files.map((file, index) => ({
-                url: `/uploads/images/${file.filename}`,
+                url: file.path,           // Cloudinary secure URL
+                publicId: file.filename,  // Cloudinary public_id for deletion
                 alt: product.name,
                 isPrimary: product.images.length === 0 && index === 0
             }));
@@ -156,14 +157,10 @@ router.delete('/:id/images/:imageId', verifyToken, requireAdmin, async (req, res
             return res.status(404).json({ success: false, message: 'Image not found' });
         }
 
-        // Remove image file from disk
-        const fs = await import('fs');
-        const path = await import('path');
-        const { fileURLToPath } = await import('url');
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = path.default.dirname(__filename);
-        const filePath = path.default.join(__dirname, '..', image.url);
-        try { fs.default.unlinkSync(filePath); } catch (e) { /* file may not exist */ }
+        // Delete from Cloudinary (if publicId is stored)
+        if (image.publicId) {
+            try { await cloudinary.uploader.destroy(image.publicId); } catch (e) { /* ignore */ }
+        }
 
         product.images.pull(req.params.imageId);
         await product.save();

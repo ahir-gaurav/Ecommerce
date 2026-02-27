@@ -98,7 +98,16 @@ function Landing() {
     };
 
     const variantsByType = getVariantsByType();
+    const hasVariants = Object.keys(variantsByType).length > 0;
     const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
+
+    const getProductImage = (product) => {
+        if (!product.images || product.images.length === 0) return null;
+        const primary = product.images.find(img => img.isPrimary) || product.images[0];
+        // Cloudinary URLs are absolute; local URLs are relative
+        if (primary.url.startsWith('http')) return primary.url;
+        return `${API_URL}${primary.url}`;
+    };
 
     return (
         <div className="landing">
@@ -179,49 +188,71 @@ function Landing() {
                         <div className="flex-center" style={{ padding: '60px 0' }}>
                             <div className="spinner"></div>
                         </div>
-                    ) : Object.keys(variantsByType).length > 0 ? (
-                        <div className="products-by-type">
-                            {['Standard', 'Premium', 'Deluxe'].map((type) => {
-                                const variants = variantsByType[type];
-                                if (!variants || variants.length === 0) return null;
-
-                                return (
-                                    <div key={type} className="type-group">
-                                        <div className="type-header">
-                                            <span className="type-icon">{typeIcons[type]}</span>
-                                            <div>
-                                                <h3 className="type-title">{type}</h3>
-                                                <p className="type-desc">{typeDescriptions[type]}</p>
+                    ) : products.length > 0 ? (
+                        hasVariants ? (
+                            // Show grouped by variant type if variants exist
+                            <div className="products-by-type">
+                                {['Standard', 'Premium', 'Deluxe'].map((type) => {
+                                    const variants = variantsByType[type];
+                                    if (!variants || variants.length === 0) return null;
+                                    return (
+                                        <div key={type} className="type-group">
+                                            <div className="type-header">
+                                                <span className="type-icon">{typeIcons[type]}</span>
+                                                <div>
+                                                    <h3 className="type-title">{type}</h3>
+                                                    <p className="type-desc">{typeDescriptions[type]}</p>
+                                                </div>
+                                            </div>
+                                            <div className="variants-grid">
+                                                {variants.map((variant, index) => {
+                                                    const finalPrice = variant.product.basePrice + (variant.priceAdjustment || 0);
+                                                    return (
+                                                        <div key={variant._id || index} className="variant-product-card">
+                                                            <div className="vpc-badge">{variant.size}</div>
+                                                            <div className="vpc-fragrance">🌸 {variant.fragrance}</div>
+                                                            <h4 className="vpc-name">{variant.product.name}</h4>
+                                                            <p className="vpc-size">{variant.type} · {variant.size}</p>
+                                                            <div className="vpc-price">₹{finalPrice}</div>
+                                                            <div className={`vpc-stock ${variant.stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
+                                                                {variant.stock > 0 ? `${variant.stock} in stock` : 'Out of stock'}
+                                                            </div>
+                                                            <Link to={`/product/${variant.product._id}`} className="vpc-btn">
+                                                                View Product →
+                                                            </Link>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
-
-                                        <div className="variants-grid">
-                                            {variants.map((variant, index) => {
-                                                const finalPrice = variant.product.basePrice + (variant.priceAdjustment || 0);
-                                                return (
-                                                    <div key={variant._id || index} className="variant-product-card">
-                                                        <div className="vpc-badge">{variant.size}</div>
-                                                        <div className="vpc-fragrance">🌸 {variant.fragrance}</div>
-                                                        <h4 className="vpc-name">{variant.product.name}</h4>
-                                                        <p className="vpc-size">{variant.type} · {variant.size}</p>
-                                                        <div className="vpc-price">₹{finalPrice}</div>
-                                                        <div className={`vpc-stock ${variant.stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
-                                                            {variant.stock > 0 ? `${variant.stock} in stock` : 'Out of stock'}
-                                                        </div>
-                                                        <Link
-                                                            to={`/product/${variant.product._id}`}
-                                                            className="vpc-btn"
-                                                        >
-                                                            View Product →
-                                                        </Link>
-                                                    </div>
-                                                );
-                                            })}
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            // Fallback: show all products as simple cards (no variants yet)
+                            <div className="variants-grid">
+                                {products.map((product) => {
+                                    const imgUrl = getProductImage(product);
+                                    return (
+                                        <div key={product._id} className="variant-product-card">
+                                            {imgUrl && (
+                                                <img
+                                                    src={imgUrl}
+                                                    alt={product.name}
+                                                    style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', marginBottom: '12px' }}
+                                                />
+                                            )}
+                                            <h4 className="vpc-name">{product.name}</h4>
+                                            <p className="vpc-size" style={{ color: '#666', fontSize: '13px', marginBottom: '8px' }}>{product.category}</p>
+                                            <div className="vpc-price">₹{product.basePrice}</div>
+                                            <Link to={`/product/${product._id}`} className="vpc-btn" style={{ marginTop: '12px' }}>
+                                                View Product →
+                                            </Link>
                                         </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        )
                     ) : (
                         <div className="no-products">
                             <p>No products available yet. Check back soon!</p>
