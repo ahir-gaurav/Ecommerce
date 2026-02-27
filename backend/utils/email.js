@@ -1,16 +1,34 @@
-﻿import { Resend } from 'resend';
+﻿import Mailjet from 'node-mailjet';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Create Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Create Mailjet client
+const mailjet = Mailjet.apiConnect(
+  process.env.MAILJET_API_KEY,
+  process.env.MAILJET_SECRET_KEY
+);
 
-// Helper: get trimmed EMAIL_FROM
-const EMAIL_FROM = (process.env.EMAIL_FROM || 'onboarding@resend.dev').trim();
-
-// Logo URL
+const SENDER_EMAIL = process.env.EMAIL_USER || 'iamgauravyaduvanshi@gmail.com';
+const SENDER_NAME = 'Kicks Don\'t Stink';
 const LOGO_URL = 'https://i.ibb.co/YBntQvVb/logo.png';
+
+// Helper to send email via Mailjet
+const sendEmail = async (to, subject, html) => {
+  const request = mailjet.post('send', { version: 'v3.1' }).request({
+    Messages: [
+      {
+        From: { Email: SENDER_EMAIL, Name: SENDER_NAME },
+        To: [{ Email: to }],
+        Subject: subject,
+        HTMLPart: html
+      }
+    ]
+  });
+
+  const result = await request;
+  return result.body;
+};
 
 // Send OTP email
 export const sendOTP = async (email, otp, purpose) => {
@@ -62,25 +80,17 @@ export const sendOTP = async (email, otp, purpose) => {
 
   try {
     console.log(`📧 Attempting to send OTP to ${email}...`);
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: email,
-      subject,
-      html
-    });
-
-    if (error) {
-      console.error('❌ Resend error:', error);
+    const result = await sendEmail(email, subject, html);
+    const status = result.Messages?.[0]?.Status;
+    if (status === 'success') {
+      console.log(`✅ OTP email sent to ${email}`);
+      return true;
+    } else {
+      console.error('❌ Mailjet send failed:', JSON.stringify(result, null, 2));
       return false;
     }
-
-    console.log(`✅ Email sent via Resend: ${data.id}`);
-    return true;
   } catch (error) {
-    console.error('❌ Email sending error:', {
-      error: error.message,
-      recipient: email
-    });
+    console.error('❌ Email sending error:', error.message, error.statusCode);
     return false;
   }
 };
@@ -121,9 +131,7 @@ export const sendOrderConfirmation = async (email, orderData) => {
                 Quantity: ${item.quantity} × ₹${item.price} = ₹${item.quantity * item.price}
               </div>
             `).join('')}
-            <div class="total">
-              Total: ₹${orderData.total}
-            </div>
+            <div class="total">Total: ₹${orderData.total}</div>
           </div>
           <p><strong>Estimated Delivery:</strong> ${orderData.estimatedDelivery}</p>
           <p>We'll send you another email when your order ships.</p>
@@ -138,22 +146,12 @@ export const sendOrderConfirmation = async (email, orderData) => {
   `;
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: email,
-      subject: `Order Confirmation - ${orderData.orderNumber}`,
-      html
-    });
-
-    if (error) {
-      console.error('❌ Resend order confirmation error:', error);
-      return false;
-    }
-
-    console.log(`✅ Order confirmation sent: ${data.id}`);
-    return true;
+    const result = await sendEmail(email, `Order Confirmation - ${orderData.orderNumber}`, html);
+    const status = result.Messages?.[0]?.Status;
+    console.log(`✅ Order confirmation sent to ${email}`);
+    return status === 'success';
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('Email sending error:', error.message);
     return false;
   }
 };
@@ -180,21 +178,10 @@ export const sendAdminAlert = async (subject, message) => {
   `;
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
-      subject: `[ALERT] ${subject}`,
-      html
-    });
-
-    if (error) {
-      console.error('❌ Resend admin alert error:', error);
-      return false;
-    }
-
-    return true;
+    const result = await sendEmail(SENDER_EMAIL, `[ALERT] ${subject}`, html);
+    return result.Messages?.[0]?.Status === 'success';
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('Admin alert error:', error.message);
     return false;
   }
 };
