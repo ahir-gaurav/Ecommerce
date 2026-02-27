@@ -49,17 +49,17 @@ router.post('/register', [
 
         const emailSent = await sendOTP(email, otpCode, 'registration');
         if (!emailSent) {
-            console.error(`❌ Failed to send registration OTP to ${email}`);
-            return res.status(500).json({
-                success: false,
-                message: 'Account created but failed to send verification email. Please try logging in to resend code.'
-            });
+            // Log the failure but DO NOT block the user — account is created, they can resend OTP
+            console.error(`❌ Failed to send registration OTP to ${email} — user can resend from OTP page`);
         }
 
         res.status(201).json({
             success: true,
-            message: 'Registration successful. Please verify your email.',
-            requiresVerification: true
+            message: emailSent
+                ? 'Registration successful. Please check your email for the verification code.'
+                : 'Account created! The verification email is delayed. Please use "Resend Code" on the next page.',
+            requiresVerification: true,
+            emailSent
         });
     } catch (error) {
         console.error('❌ Registration error:', error);

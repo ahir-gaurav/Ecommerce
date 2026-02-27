@@ -16,6 +16,8 @@ function VerifyOTP() {
     const navigate = useNavigate();
     const location = useLocation();
     const email = location.state?.email;
+    const emailSent = location.state?.emailSent !== false; // default true if not passed
+    const serverMessage = location.state?.message;
 
     useEffect(() => {
         if (!email) {
@@ -72,6 +74,11 @@ function VerifyOTP() {
                         <p>We sent a 6-digit code to <strong>{email}</strong></p>
                     </div>
 
+                    {!emailSent && (
+                        <div className="error-message" style={{ background: '#fff3cd', borderColor: '#ffc107', color: '#856404' }}>
+                            ⚠️ Verification email was delayed. Please click <strong>Resend Code</strong> below to get your OTP.
+                        </div>
+                    )}
                     {error && <div className="error-message">{error}</div>}
                     {success && <div className="success-message">{success}</div>}
 

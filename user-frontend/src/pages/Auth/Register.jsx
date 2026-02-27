@@ -19,8 +19,15 @@ function Register() {
         setLoading(true);
 
         try {
-            await register(name, email, password);
-            navigate('/verify-otp', { state: { email } });
+            const result = await register(name, email, password);
+            // Always navigate to OTP page — even if email was delayed (user can resend there)
+            navigate('/verify-otp', {
+                state: {
+                    email,
+                    emailSent: result.emailSent !== false,
+                    message: result.message
+                }
+            });
         } catch (err) {
             setError(err.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
