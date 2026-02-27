@@ -6,11 +6,28 @@ dotenv.config();
 // Create transporter
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: false,
+  port: parseInt(process.env.EMAIL_PORT),
+  secure: process.env.EMAIL_PORT == 465, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
+  },
+  tls: {
+    rejectUnauthorized: false // Helps with some hosting environments
+  },
+  connectionTimeout: 10000,  // Fail fast on Render cold starts (10s)
+  greetingTimeout: 10000
+});
+
+// Helper: get trimmed EMAIL_FROM (avoids SMTP rejection from trailing spaces)
+const EMAIL_FROM = (process.env.EMAIL_FROM || '').trim();
+
+// Verify transporter on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ SMTP Transporter Error:', error);
+  } else {
+    console.log('✅ SMTP Server is ready to take our messages');
   }
 });
 
@@ -66,15 +83,22 @@ export const sendOTP = async (email, otp, purpose) => {
   `;
 
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+    console.log(`📧 Attempting to send OTP to ${email}...`);
+    const info = await transporter.sendMail({
+      from: EMAIL_FROM,
       to: email,
       subject,
       html
     });
+    console.log(`✅ Email sent: ${info.messageId}`);
     return true;
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('❌ Email sending error details:', {
+      error: error.message,
+      code: error.code,
+      command: error.command,
+      recipient: email
+    });
     return false;
   }
 };
@@ -133,7 +157,7 @@ export const sendOrderConfirmation = async (email, orderData) => {
 
   try {
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: EMAIL_FROM,
       to: email,
       subject: `Order Confirmation - ${orderData.orderNumber}`,
       html
@@ -168,7 +192,7 @@ export const sendAdminAlert = async (subject, message) => {
 
   try {
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: EMAIL_FROM,
       to: process.env.EMAIL_USER, // Send to admin email
       subject: `[ALERT] ${subject}`,
       html

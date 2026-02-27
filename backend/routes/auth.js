@@ -41,11 +41,20 @@ router.post('/register', [
 
         // Create user as unverified
         const user = await User.create({ name, email, password, isVerified: false });
+        console.log(`👤 New user created: ${email} (unverified)`);
 
         // Generate and send OTP
         const otpCode = OTP.generateOTP();
         await OTP.create({ email, otp: otpCode, purpose: 'registration' });
-        await sendOTP(email, otpCode, 'registration');
+
+        const emailSent = await sendOTP(email, otpCode, 'registration');
+        if (!emailSent) {
+            console.error(`❌ Failed to send registration OTP to ${email}`);
+            return res.status(500).json({
+                success: false,
+                message: 'Account created but failed to send verification email. Please try logging in to resend code.'
+            });
+        }
 
         res.status(201).json({
             success: true,
@@ -53,7 +62,7 @@ router.post('/register', [
             requiresVerification: true
         });
     } catch (error) {
-        console.error('Registration error:', error);
+        console.error('❌ Registration error:', error);
         res.status(500).json({ success: false, message: 'Registration failed' });
     }
 });
@@ -70,6 +79,12 @@ router.post('/verify-otp', [
 
         if (!otpRecord) {
             return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+        }
+
+        // Explicitly check expiry (in case MongoDB TTL hasn't cleaned it up yet)
+        if (otpRecord.expiresAt < new Date()) {
+            await OTP.deleteMany({ email, purpose: 'registration' });
+            return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
         }
 
         // Verify user
@@ -153,9 +168,11 @@ router.post('/login', [
 
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
+            console.log(`🚫 Invalid password attempt for: ${email}`);
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
+        console.log(`✅ User logged in successfully: ${email}`);
         const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
             expiresIn: '7d'
         });
@@ -212,6 +229,12 @@ router.post('/reset-password', [
 
         if (!otpRecord) {
             return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+        }
+
+        // Explicitly check expiry (in case MongoDB TTL hasn't cleaned it up yet)
+        if (otpRecord.expiresAt < new Date()) {
+            await OTP.deleteMany({ email, purpose: 'password-reset' });
+            return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
         }
 
         const user = await User.findOne({ email });

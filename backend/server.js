@@ -22,15 +22,41 @@ import './cron/analytics.js';
 // Load environment variables
 dotenv.config();
 
+// Critical Environment Variable Check
+const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'EMAIL_USER', 'EMAIL_PASSWORD', 'USER_FRONTEND_URL', 'ADMIN_FRONTEND_URL'];
+requiredEnvVars.forEach(varName => {
+    if (!process.env[varName]) {
+        console.warn(`⚠️ Warning: Environment variable ${varName} is missing!`);
+    }
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Update CORS to be more flexible for deployment
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    process.env.USER_FRONTEND_URL,
+    process.env.ADMIN_FRONTEND_URL,
+    'https://ecommerce-opal-one-63.vercel.app',
+    'https://ecommerce-admin-three-liart.vercel.app'
+].filter(Boolean); // Remove undefined values
+
 app.use(cors({
-    origin: [process.env.USER_FRONTEND_URL, process.env.ADMIN_FRONTEND_URL],
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            console.error(`❌ CORS blocked origin: ${origin}`);
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     credentials: true
 }));
 app.use(express.json());
