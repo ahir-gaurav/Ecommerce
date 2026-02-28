@@ -21,7 +21,7 @@ import fragranceRoutes from './routes/fragrances.js';
 import './cron/analytics.js';
 
 // Critical Environment Variable Check
-const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'BREVO_API_KEY', 'EMAIL_USER', 'USER_FRONTEND_URL', 'ADMIN_FRONTEND_URL'];
+const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'BREVO_API_KEY', 'EMAIL_USER', 'USER_FRONTEND_URL', 'ADMIN_FRONTEND_URL', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
 requiredEnvVars.forEach(varName => {
     if (!process.env[varName]) {
         console.warn(`⚠️ Warning: Environment variable ${varName} is missing!`);

@@ -3,10 +3,11 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
-    baseURL: API_URL?.endsWith('/') ? API_URL : `${API_URL}/`,
-    headers: {
-        'Content-Type': 'application/json'
-    }
+    baseURL: API_URL?.endsWith('/') ? API_URL : `${API_URL}/`
+    // Do NOT set a global Content-Type here.
+    // Axios sets 'application/json' automatically for JSON bodies.
+    // For FormData (file uploads), the browser must set Content-Type
+    // automatically so it includes the multipart boundary.
 });
 
 // Add admin token to requests
@@ -60,9 +61,7 @@ export const productAPI = {
     create: (data) => api.post('products', data),
     update: (id, data) => api.put(`products/${id}`, data),
     delete: (id) => api.delete(`products/${id}`),
-    uploadImages: (id, formData) => api.post(`products/${id}/images`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
+    uploadImages: (id, formData) => api.post(`products/${id}/images`, formData),
     deleteImage: (id, imageId) => api.delete(`products/${id}/images/${imageId}`),
     addVariant: (id, data) => api.post(`products/${id}/variants`, data),
     updateVariant: (id, variantId, data) => api.put(`products/${id}/variants/${variantId}`, data)
@@ -71,12 +70,8 @@ export const productAPI = {
 // Hero Section APIs
 export const heroAPI = {
     getAll: () => api.get('hero/all'),
-    create: (formData) => api.post('hero', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
-    update: (id, formData) => api.put(`hero/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
+    create: (formData) => api.post('hero', formData),
+    update: (id, formData) => api.put(`hero/${id}`, formData),
     delete: (id) => api.delete(`hero/${id}`)
 };
 
