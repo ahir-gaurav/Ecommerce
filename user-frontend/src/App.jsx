@@ -10,6 +10,7 @@ import VerifyOTP from './pages/Auth/VerifyOTP';
 import ForgotPassword from './pages/Auth/ForgotPassword';
 import ResetPassword from './pages/Auth/ResetPassword';
 import Product from './pages/Product/Product';
+import Shop from './pages/Shop/Shop';
 import Cart from './pages/Cart/Cart';
 import Checkout from './pages/Checkout/Checkout';
 import Profile from './pages/Profile/Profile';
@@ -45,6 +46,7 @@ function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/product/:id" element={<Product />} />
+        <Route path="/shop" element={<Shop />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={
           <ProtectedRoute>

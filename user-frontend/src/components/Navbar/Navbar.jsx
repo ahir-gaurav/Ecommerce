@@ -28,7 +28,7 @@ function Navbar() {
                         </button>
                         <div className="nav-left-links">
                             <NavLink to="/" className="nav-link" end>Home</NavLink>
-                            <NavLink to="/#products" className="nav-link">Shop</NavLink>
+                            <NavLink to="/shop" className="nav-link">Shop</NavLink>
                         </div>
                     </div>
 
@@ -80,7 +80,7 @@ function Navbar() {
                 <div className="slide-menu-body">
                     <div className="slide-menu-section">
                         <NavLink to="/" className="slide-link" onClick={closeMobile} end>Home</NavLink>
-                        <NavLink to="/#products" className="slide-link" onClick={closeMobile}>Shop</NavLink>
+                        <NavLink to="/shop" className="slide-link" onClick={closeMobile}>Shop</NavLink>
                         {!isAuthenticated && (
                             <>
                                 <NavLink to="/login" className="slide-link" onClick={closeMobile}>Login</NavLink>
