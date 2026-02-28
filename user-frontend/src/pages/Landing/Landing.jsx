@@ -10,6 +10,11 @@ function Landing() {
     const [currentSlide, setCurrentSlide] = useState(0);
     const intervalRef = useRef(null);
 
+    // Filter / Sort state
+    const [activeType, setActiveType] = useState('All');
+    const [sortBy, setSortBy] = useState('default');
+    const [showInStock, setShowInStock] = useState(false);
+
     useEffect(() => {
         fetchInitialData();
     }, []);
@@ -176,7 +181,7 @@ function Landing() {
                 </div>
             </div>
 
-            {/* Products By Type */}
+            {/* Products Section */}
             <section id="products" className="products-section">
                 <div className="container">
                     <div className="section-header">
@@ -184,75 +189,132 @@ function Landing() {
                         <p>Choose your perfect shoe care</p>
                     </div>
 
+                    {/* Filter / Sort Toolbar */}
+                    {!loading && hasVariants && (
+                        <div className="collection-toolbar">
+                            {/* Category pills */}
+                            <div className="toolbar-pills">
+                                {['All', 'Standard', 'Premium', 'Deluxe'].map((type) => (
+                                    <button
+                                        key={type}
+                                        className={`pill-btn ${activeType === type ? 'active' : ''}`}
+                                        onClick={() => setActiveType(type)}
+                                    >
+                                        {type === 'All' ? '🛒 All Products' : `${typeIcons[type]} ${type}`}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Sort & stock filter */}
+                            <div className="toolbar-controls">
+                                <label className="stock-toggle">
+                                    <input
+                                        type="checkbox"
+                                        checked={showInStock}
+                                        onChange={(e) => setShowInStock(e.target.checked)}
+                                    />
+                                    In Stock Only
+                                </label>
+                                <select
+                                    className="sort-select"
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                >
+                                    <option value="default">Sort By: Default</option>
+                                    <option value="price-asc">Price: Low → High</option>
+                                    <option value="price-desc">Price: High → Low</option>
+                                    <option value="name-asc">Name: A → Z</option>
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
                     {loading ? (
                         <div className="flex-center" style={{ padding: '60px 0' }}>
                             <div className="spinner"></div>
                         </div>
-                    ) : products.length > 0 ? (
-                        hasVariants ? (
-                            // Show grouped by variant type if variants exist
-                            <div className="products-by-type">
-                                {['Standard', 'Premium', 'Deluxe'].map((type) => {
-                                    const variants = variantsByType[type];
-                                    if (!variants || variants.length === 0) return null;
-                                    return (
-                                        <div key={type} className="type-group">
-                                            <div className="type-header">
-                                                <span className="type-icon">{typeIcons[type]}</span>
-                                                <div>
-                                                    <h3 className="type-title">{type}</h3>
-                                                    <p className="type-desc">{typeDescriptions[type]}</p>
-                                                </div>
-                                            </div>
-                                            <div className="variants-grid">
-                                                {variants.map((variant, index) => {
-                                                    const finalPrice = variant.product.basePrice + (variant.priceAdjustment || 0);
-                                                    return (
-                                                        <div key={variant._id || index} className="variant-product-card">
-                                                            <div className="vpc-badge">{variant.size}</div>
-                                                            <div className="vpc-fragrance">🌸 {variant.fragrance}</div>
-                                                            <h4 className="vpc-name">{variant.product.name}</h4>
-                                                            <p className="vpc-size">{variant.type} · {variant.size}</p>
-                                                            <div className="vpc-price">₹{finalPrice}</div>
-                                                            <div className={`vpc-stock ${variant.stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
-                                                                {variant.stock > 0 ? `${variant.stock} in stock` : 'Out of stock'}
-                                                            </div>
-                                                            <Link to={`/product/${variant.product._id}`} className="vpc-btn">
-                                                                View Product →
-                                                            </Link>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            // Fallback: show all products as simple cards (no variants yet)
+                    ) : hasVariants ? (() => {
+                        // Flatten all variants
+                        let allVariants = Object.values(variantsByType).flat();
+
+                        // Filter by type
+                        if (activeType !== 'All') {
+                            allVariants = allVariants.filter(v => v.type === activeType);
+                        }
+
+                        // Filter in stock
+                        if (showInStock) {
+                            allVariants = allVariants.filter(v => v.stock > 0);
+                        }
+
+                        // Sort
+                        if (sortBy === 'price-asc') {
+                            allVariants = [...allVariants].sort((a, b) =>
+                                (a.product.basePrice + (a.priceAdjustment || 0)) - (b.product.basePrice + (b.priceAdjustment || 0))
+                            );
+                        } else if (sortBy === 'price-desc') {
+                            allVariants = [...allVariants].sort((a, b) =>
+                                (b.product.basePrice + (b.priceAdjustment || 0)) - (a.product.basePrice + (a.priceAdjustment || 0))
+                            );
+                        } else if (sortBy === 'name-asc') {
+                            allVariants = [...allVariants].sort((a, b) =>
+                                a.product.name.localeCompare(b.product.name)
+                            );
+                        }
+
+                        if (allVariants.length === 0) {
+                            return (
+                                <div className="no-products">
+                                    <p>No products match your filters.</p>
+                                </div>
+                            );
+                        }
+
+                        return (
                             <div className="variants-grid">
-                                {products.map((product) => {
-                                    const imgUrl = getProductImage(product);
+                                {allVariants.map((variant, index) => {
+                                    const finalPrice = variant.product.basePrice + (variant.priceAdjustment || 0);
                                     return (
-                                        <div key={product._id} className="variant-product-card">
-                                            {imgUrl && (
-                                                <img
-                                                    src={imgUrl}
-                                                    alt={product.name}
-                                                    style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', marginBottom: '12px' }}
-                                                />
-                                            )}
-                                            <h4 className="vpc-name">{product.name}</h4>
-                                            <p className="vpc-size" style={{ color: '#666', fontSize: '13px', marginBottom: '8px' }}>{product.category}</p>
-                                            <div className="vpc-price">₹{product.basePrice}</div>
-                                            <Link to={`/product/${product._id}`} className="vpc-btn" style={{ marginTop: '12px' }}>
+                                        <div key={variant._id || index} className="variant-product-card">
+                                            <div className="vpc-badge">{variant.size}</div>
+                                            <div className="vpc-fragrance">🌸 {variant.fragrance}</div>
+                                            <h4 className="vpc-name">{variant.product.name}</h4>
+                                            <p className="vpc-size">{variant.type} · {variant.size}</p>
+                                            <div className="vpc-price">₹{finalPrice}</div>
+                                            <div className={`vpc-stock ${variant.stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
+                                                {variant.stock > 0 ? `${variant.stock} in stock` : 'Out of stock'}
+                                            </div>
+                                            <Link to={`/product/${variant.product._id}`} className="vpc-btn">
                                                 View Product →
                                             </Link>
                                         </div>
                                     );
                                 })}
                             </div>
-                        )
+                        );
+                    })() : products.length > 0 ? (
+                        <div className="variants-grid">
+                            {products.map((product) => {
+                                const imgUrl = getProductImage(product);
+                                return (
+                                    <div key={product._id} className="variant-product-card">
+                                        {imgUrl && (
+                                            <img
+                                                src={imgUrl}
+                                                alt={product.name}
+                                                style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', marginBottom: '12px' }}
+                                            />
+                                        )}
+                                        <h4 className="vpc-name">{product.name}</h4>
+                                        <p className="vpc-size" style={{ color: '#666', fontSize: '13px', marginBottom: '8px' }}>{product.category}</p>
+                                        <div className="vpc-price">₹{product.basePrice}</div>
+                                        <Link to={`/product/${product._id}`} className="vpc-btn" style={{ marginTop: '12px' }}>
+                                            View Product →
+                                        </Link>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     ) : (
                         <div className="no-products">
                             <p>No products available yet. Check back soon!</p>
