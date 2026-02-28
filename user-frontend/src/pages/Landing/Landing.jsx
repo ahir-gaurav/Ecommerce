@@ -131,7 +131,7 @@ function Landing() {
                                 style={{ backgroundColor: slide.bgColor || '#f5f0eb' }}
                             >
                                 {slide.image ? (
-                                    <div className="hero-slide-content has-image">
+                                    <div className={`hero-slide-content has-image text-pos-${slide.textPosition || 'right'}`}>
                                         <div className="hero-text-overlay">
                                             <h1 className="carousel-heading">{slide.title}</h1>
                                             <p className="carousel-sub">{slide.subtitle}</p>
@@ -140,7 +140,7 @@ function Landing() {
                                         <img src={slide.image?.startsWith('http') ? slide.image : `${API_URL}${slide.image}`} alt={slide.title} className="carousel-img" />
                                     </div>
                                 ) : (
-                                    <div className="carousel-text-slide">
+                                    <div className={`carousel-text-slide text-pos-${slide.textPosition || 'right'}`}>
                                         <h1 className="carousel-heading">{slide.title}</h1>
                                         <p className="carousel-sub">{slide.subtitle}</p>
                                         <a href={slide.ctaLink || '#products'} className="carousel-cta">{slide.ctaText || 'Shop Now'}</a>

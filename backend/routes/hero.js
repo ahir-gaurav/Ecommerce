@@ -34,17 +34,17 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
         }
 
         try {
-            const { title, subtitle, ctaText, ctaLink, bgColor, order, isActive } = req.body;
+            const { title, subtitle, ctaText, ctaLink, bgColor, order, isActive, textPosition } = req.body;
 
             const slide = await HeroSlide.create({
                 title,
                 subtitle: subtitle || '',
                 ctaText: ctaText || 'Shop Now',
                 ctaLink: ctaLink || '/products',
-                // Store the Cloudinary secure URL directly
                 image: req.file ? req.file.path : '',
                 imagePublicId: req.file ? req.file.filename : '',
                 bgColor: bgColor || '#f5f0eb',
+                textPosition: textPosition || 'right',
                 order: order || 0,
                 isActive: isActive !== undefined ? isActive === 'true' || isActive === true : true
             });
@@ -71,13 +71,14 @@ router.put('/:id', verifyToken, requireAdmin, (req, res) => {
                 return res.status(404).json({ success: false, message: 'Slide not found' });
             }
 
-            const { title, subtitle, ctaText, ctaLink, bgColor, order, isActive } = req.body;
+            const { title, subtitle, ctaText, ctaLink, bgColor, order, isActive, textPosition } = req.body;
 
             if (title !== undefined) slide.title = title;
             if (subtitle !== undefined) slide.subtitle = subtitle;
             if (ctaText !== undefined) slide.ctaText = ctaText;
             if (ctaLink !== undefined) slide.ctaLink = ctaLink;
             if (bgColor !== undefined) slide.bgColor = bgColor;
+            if (textPosition !== undefined) slide.textPosition = textPosition;
             if (order !== undefined) slide.order = parseInt(order);
             if (isActive !== undefined) slide.isActive = isActive === 'true' || isActive === true;
 

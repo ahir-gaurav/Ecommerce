@@ -16,6 +16,7 @@ function HeroSection() {
         ctaText: 'Shop Now',
         ctaLink: '/#products',
         bgColor: '#f5f0eb',
+        textPosition: 'right',
         order: 0,
         isActive: true,
         image: null
@@ -69,6 +70,7 @@ function HeroSection() {
         formData.append('ctaText', form.ctaText);
         formData.append('ctaLink', form.ctaLink);
         formData.append('bgColor', form.bgColor);
+        formData.append('textPosition', form.textPosition);
         formData.append('order', form.order);
         formData.append('isActive', form.isActive);
         if (form.image instanceof File) {
@@ -103,6 +105,7 @@ function HeroSection() {
             ctaText: slide.ctaText || 'Shop Now',
             ctaLink: slide.ctaLink || '/#products',
             bgColor: slide.bgColor || '#f5f0eb',
+            textPosition: slide.textPosition || 'right',
             order: slide.order || 0,
             isActive: slide.isActive,
             image: null
@@ -243,6 +246,35 @@ function HeroSection() {
                                 </div>
                             </div>
 
+                            <div className="form-group">
+                                <label>Text Position</label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    {['left', 'center', 'right'].map((pos) => (
+                                        <button
+                                            key={pos}
+                                            type="button"
+                                            onClick={() => setForm({ ...form, textPosition: pos })}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                border: '1.5px solid',
+                                                borderColor: form.textPosition === pos ? '#1a1a1a' : '#ddd',
+                                                borderRadius: '6px',
+                                                background: form.textPosition === pos ? '#1a1a1a' : '#fff',
+                                                color: form.textPosition === pos ? '#fff' : '#555',
+                                                fontWeight: 600,
+                                                fontSize: '13px',
+                                                cursor: 'pointer',
+                                                textTransform: 'capitalize',
+                                                transition: 'all 0.15s'
+                                            }}
+                                        >
+                                            {pos === 'left' ? '⬅ Left' : pos === 'right' ? 'Right ➡' : '↔ Center'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             <div className="form-row">
                                 <div className="form-group">
                                     <label>Background Color</label>
@@ -256,6 +288,7 @@ function HeroSection() {
                                     <input type="number" value={form.order} onChange={(e) => setForm({ ...form, order: parseInt(e.target.value) })} />
                                 </div>
                             </div>
+
 
                             <div className="form-group">
                                 <label>Image</label>
@@ -286,10 +319,11 @@ function HeroSection() {
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </div>
-            )}
-        </div>
+                    </div >
+                </div >
+            )
+            }
+        </div >
     );
 }
 

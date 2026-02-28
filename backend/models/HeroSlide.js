@@ -31,6 +31,11 @@ const heroSlideSchema = new mongoose.Schema({
         type: String,
         default: '#f5f0eb'
     },
+    textPosition: {
+        type: String,
+        enum: ['left', 'right', 'center'],
+        default: 'right'
+    },
     order: {
         type: Number,
         default: 0

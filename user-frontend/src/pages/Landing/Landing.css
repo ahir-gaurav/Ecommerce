@@ -49,7 +49,7 @@
     z-index: 0;
 }
 
-/* Slide with image: image fills full, text overlaid on right */
+/* Slide with image: image fills full, position controlled by text-pos-* modifier */
 .hero-slide-content.has-image {
     position: relative;
     width: 100%;
@@ -57,15 +57,65 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    /* default: right — overridden by modifiers below */
 }
 
-/* Gradient darkens the RIGHT side so text on right is always readable */
+/* Gradient defaults to darkening the RIGHT side */
 .hero-slide-content.has-image::after {
     content: '';
     position: absolute;
     inset: 0;
     background: linear-gradient(to left, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.2) 55%, transparent 100%);
     z-index: 1;
+}
+
+/* ---- Text Position Modifiers ---- */
+/* LEFT */
+.hero-slide-content.text-pos-left {
+    justify-content: flex-start;
+}
+
+.hero-slide-content.text-pos-left::after {
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.2) 55%, transparent 100%);
+}
+
+.hero-slide-content.text-pos-left .hero-text-overlay {
+    text-align: left;
+}
+
+/* CENTER */
+.hero-slide-content.text-pos-center {
+    justify-content: center;
+}
+
+.hero-slide-content.text-pos-center::after {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.hero-slide-content.text-pos-center .hero-text-overlay {
+    text-align: center;
+    max-width: 600px;
+}
+
+/* RIGHT (default — no extra override needed) */
+.hero-slide-content.text-pos-right {
+    justify-content: flex-end;
+}
+
+/* Text-only slides (no image) — same position modifiers */
+.carousel-text-slide.text-pos-left {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.carousel-text-slide.text-pos-right {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.carousel-text-slide.text-pos-center {
+    align-items: center;
+    text-align: center;
 }
 
 /* Text overlay — right side, on top of image */
@@ -75,6 +125,7 @@
     padding: 40px 64px;
     max-width: 480px;
     text-align: right;
+    /* default, overridden by modifiers above */
 }
 
 .hero-text-overlay .carousel-heading {
@@ -97,6 +148,7 @@
     background: #f0f0f0;
     color: #1a1a1a;
 }
+
 
 @media (max-width: 768px) {
     .hero-text-overlay {
