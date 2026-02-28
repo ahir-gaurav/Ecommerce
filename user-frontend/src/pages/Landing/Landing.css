@@ -28,11 +28,15 @@
     position: absolute;
     inset: 0;
     opacity: 0;
-    transition: opacity 1s ease-in-out;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 1s ease-in-out, visibility 1s;
 }
 
 .carousel-slide.active {
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .carousel-img {

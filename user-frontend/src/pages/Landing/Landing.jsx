@@ -135,7 +135,11 @@ function Landing() {
                                         <div className="hero-text-overlay">
                                             <h1 className="carousel-heading">{slide.title}</h1>
                                             <p className="carousel-sub">{slide.subtitle}</p>
-                                            <Link to={slide.ctaLink || '#products'} className="carousel-cta">{slide.ctaText || 'Shop Now'}</Link>
+                                            {slide.ctaLink?.startsWith('#') ? (
+                                                <a href={slide.ctaLink} className="carousel-cta">{slide.ctaText || 'Shop Now'}</a>
+                                            ) : (
+                                                <Link to={slide.ctaLink || '#products'} className="carousel-cta">{slide.ctaText || 'Shop Now'}</Link>
+                                            )}
                                         </div>
                                         <img src={slide.image?.startsWith('http') ? slide.image : `${API_URL}${slide.image}`} alt={slide.title} className="carousel-img" />
                                     </div>
@@ -143,7 +147,11 @@ function Landing() {
                                     <div className="carousel-text-slide">
                                         <h1 className="carousel-heading">{slide.title}</h1>
                                         <p className="carousel-sub">{slide.subtitle}</p>
-                                        <Link to={slide.ctaLink || '#products'} className="carousel-cta">{slide.ctaText || 'Shop Now'}</Link>
+                                        {slide.ctaLink?.startsWith('#') ? (
+                                            <a href={slide.ctaLink} className="carousel-cta">{slide.ctaText || 'Shop Now'}</a>
+                                        ) : (
+                                            <Link to={slide.ctaLink || '#products'} className="carousel-cta">{slide.ctaText || 'Shop Now'}</Link>
+                                        )}
                                     </div>
                                 )}
                             </div>
