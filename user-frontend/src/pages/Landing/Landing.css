@@ -36,11 +36,60 @@
 }
 
 .carousel-img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center;
+    z-index: 0;
 }
+
+/* Slide with image: stack image behind text */
+.hero-slide-content.has-image {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Dark gradient over image so text is always readable */
+.hero-slide-content.has-image::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.1) 60%, transparent 100%);
+    z-index: 1;
+}
+
+/* Text overlay on top of the image */
+.hero-text-overlay {
+    position: relative;
+    z-index: 2;
+    padding: 40px 64px;
+    max-width: 560px;
+}
+
+.hero-text-overlay .carousel-heading {
+    color: #fff;
+}
+
+.hero-text-overlay .carousel-sub {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.hero-text-overlay .carousel-cta {
+    background: #fff;
+    color: #1a1a1a;
+}
+
+.hero-text-overlay .carousel-cta:hover {
+    background: #f0f0f0;
+    color: #1a1a1a;
+}
+
 
 /* Text fallback slides */
 .carousel-text-slide {
