@@ -29,7 +29,8 @@ router.get('/all', verifyToken, requireAdmin, async (req, res) => {
 router.post('/', verifyToken, requireAdmin, (req, res) => {
     uploadHero(req, res, async (err) => {
         if (err) {
-            return res.status(400).json({ success: false, message: err.message });
+            console.error('Hero upload middleware error:', err.message, err);
+            return res.status(400).json({ success: false, message: err.message || 'Image upload failed' });
         }
 
         try {
@@ -50,8 +51,8 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
 
             res.status(201).json({ success: true, slide });
         } catch (error) {
-            console.error('Create hero slide error:', error);
-            res.status(500).json({ success: false, message: 'Failed to create hero slide' });
+            console.error('Create hero slide error:', error.message, error);
+            res.status(500).json({ success: false, message: error.message || 'Failed to create hero slide' });
         }
     });
 });
@@ -60,7 +61,8 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
 router.put('/:id', verifyToken, requireAdmin, (req, res) => {
     uploadHero(req, res, async (err) => {
         if (err) {
-            return res.status(400).json({ success: false, message: err.message });
+            console.error('Hero update upload middleware error:', err.message, err);
+            return res.status(400).json({ success: false, message: err.message || 'Image upload failed' });
         }
 
         try {
@@ -91,8 +93,8 @@ router.put('/:id', verifyToken, requireAdmin, (req, res) => {
             await slide.save();
             res.json({ success: true, slide });
         } catch (error) {
-            console.error('Update hero slide error:', error);
-            res.status(500).json({ success: false, message: 'Failed to update hero slide' });
+            console.error('Update hero slide error:', error.message, error);
+            res.status(500).json({ success: false, message: error.message || 'Failed to update hero slide' });
         }
     });
 });

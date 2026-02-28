@@ -9,6 +9,13 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// Log Cloudinary config status on startup
+console.log('☁️  Cloudinary config:', {
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || '❌ MISSING',
+    api_key: process.env.CLOUDINARY_API_KEY ? '✅ SET' : '❌ MISSING',
+    api_secret: process.env.CLOUDINARY_API_SECRET ? '✅ SET' : '❌ MISSING'
+});
+
 // Export cloudinary instance for use in routes (e.g. delete)
 export { cloudinary };
 

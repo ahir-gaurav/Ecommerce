@@ -113,7 +113,8 @@ router.put('/:id/variants/:variantId', verifyToken, requireAdmin, async (req, re
 router.post('/:id/images', verifyToken, requireAdmin, (req, res) => {
     uploadImages(req, res, async (err) => {
         if (err) {
-            return res.status(400).json({ success: false, message: err.message });
+            console.error('Product image upload middleware error:', err.message, err);
+            return res.status(400).json({ success: false, message: err.message || 'Image upload failed' });
         }
 
         try {
