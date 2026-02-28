@@ -132,7 +132,7 @@ function Landing() {
                                             <p className="carousel-sub">{slide.subtitle}</p>
                                             <Link to={slide.ctaLink || '#products'} className="carousel-cta">{slide.ctaText || 'Shop Now'}</Link>
                                         </div>
-                                        <img src={`${API_URL}${slide.image}`} alt={slide.title} className="carousel-img" />
+                                        <img src={slide.image?.startsWith('http') ? slide.image : `${API_URL}${slide.image}`} alt={slide.title} className="carousel-img" />
                                     </div>
                                 ) : (
                                     <div className="carousel-text-slide">

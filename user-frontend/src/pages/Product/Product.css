@@ -12,6 +12,24 @@
     gap: 48px;
 }
 
+.product-main-image {
+    background: #f8f8f6;
+    border: 1px solid #eee;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+}
+
+.product-main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Using contain to ensure the whole shoe is visible */
+    background: #f8f8f6;
+}
+
 .product-image-placeholder {
     background: #f8f8f6;
     border: 1px solid #eee;

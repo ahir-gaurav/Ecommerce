@@ -18,7 +18,7 @@ function Footer() {
                     <div className="footer-section">
                         <h4>Shop</h4>
                         <ul>
-                            <li><Link to="/product/1">All Products</Link></li>
+                            <li><Link to="/#products">All Products</Link></li>
                             <li><Link to="/cart">Cart</Link></li>
                         </ul>
                     </div>

@@ -56,6 +56,16 @@ function Product() {
 
     const finalPrice = product.basePrice + (selectedVariant?.priceAdjustment || 0);
 
+    const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
+
+    const getImageUrl = (img) => {
+        if (!img || !img.url) return null;
+        if (img.url.startsWith('http')) return img.url;
+        return `${API_URL}${img.url}`;
+    };
+
+    const primaryImage = product.images?.find(img => img.isPrimary) || product.images?.[0];
+
     return (
         <div className="product-page">
             <div className="container">
@@ -65,9 +75,15 @@ function Product() {
                         initial={{ opacity: 0, x: -30 }}
                         animate={{ opacity: 1, x: 0 }}
                     >
-                        <div className="product-image-placeholder">
-                            <div className="product-icon-large">👟</div>
-                        </div>
+                        {primaryImage ? (
+                            <div className="product-main-image">
+                                <img src={getImageUrl(primaryImage)} alt={product.name} />
+                            </div>
+                        ) : (
+                            <div className="product-image-placeholder">
+                                <div className="product-icon-large">👟</div>
+                            </div>
+                        )}
                         <div className="eco-features">
                             <div className="eco-badge">🌍 Eco-Friendly</div>
                             <div className="eco-badge">♻️ Biodegradable</div>
