@@ -1,40 +1,9 @@
 import express from 'express';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
 import HeroSlide from '../models/HeroSlide.js';
 import { verifyToken, requireAdmin } from '../middleware/auth.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { uploadHero, cloudinary } from '../middleware/upload.js';
 
 const router = express.Router();
-
-// Multer config for hero images
-const heroStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '../uploads/images');
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'hero-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const heroUpload = multer({
-    storage: heroStorage,
-    fileFilter: (req, file, cb) => {
-        const allowed = /jpeg|jpg|png|webp/;
-        if (allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only JPEG, PNG, WebP images are allowed'));
-        }
-    },
-    limits: { fileSize: 5 * 1024 * 1024 }
-}).single('image');
 
 // GET all active hero slides (public)
 router.get('/', async (req, res) => {
@@ -58,7 +27,7 @@ router.get('/all', verifyToken, requireAdmin, async (req, res) => {
 
 // CREATE hero slide (admin)
 router.post('/', verifyToken, requireAdmin, (req, res) => {
-    heroUpload(req, res, async (err) => {
+    uploadHero(req, res, async (err) => {
         if (err) {
             return res.status(400).json({ success: false, message: err.message });
         }
@@ -71,7 +40,9 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
                 subtitle: subtitle || '',
                 ctaText: ctaText || 'Shop Now',
                 ctaLink: ctaLink || '/products',
-                image: req.file ? `/uploads/images/${req.file.filename}` : '',
+                // Store the Cloudinary secure URL directly
+                image: req.file ? req.file.path : '',
+                imagePublicId: req.file ? req.file.filename : '',
                 bgColor: bgColor || '#f5f0eb',
                 order: order || 0,
                 isActive: isActive !== undefined ? isActive === 'true' || isActive === true : true
@@ -87,7 +58,7 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
 
 // UPDATE hero slide (admin)
 router.put('/:id', verifyToken, requireAdmin, (req, res) => {
-    heroUpload(req, res, async (err) => {
+    uploadHero(req, res, async (err) => {
         if (err) {
             return res.status(400).json({ success: false, message: err.message });
         }
@@ -108,14 +79,13 @@ router.put('/:id', verifyToken, requireAdmin, (req, res) => {
             if (order !== undefined) slide.order = parseInt(order);
             if (isActive !== undefined) slide.isActive = isActive === 'true' || isActive === true;
 
-            // Replace image if new one uploaded
+            // Replace image if new one uploaded — delete old from Cloudinary
             if (req.file) {
-                // Delete old image
-                if (slide.image) {
-                    const oldPath = path.join(__dirname, '..', slide.image);
-                    try { fs.unlinkSync(oldPath); } catch (e) { /* ok */ }
+                if (slide.imagePublicId) {
+                    try { await cloudinary.uploader.destroy(slide.imagePublicId); } catch (e) { /* ok */ }
                 }
-                slide.image = `/uploads/images/${req.file.filename}`;
+                slide.image = req.file.path;           // Cloudinary secure URL
+                slide.imagePublicId = req.file.filename; // Cloudinary public_id
             }
 
             await slide.save();
@@ -135,10 +105,9 @@ router.delete('/:id', verifyToken, requireAdmin, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Slide not found' });
         }
 
-        // Delete image file
-        if (slide.image) {
-            const filePath = path.join(__dirname, '..', slide.image);
-            try { fs.unlinkSync(filePath); } catch (e) { /* ok */ }
+        // Delete image from Cloudinary
+        if (slide.imagePublicId) {
+            try { await cloudinary.uploader.destroy(slide.imagePublicId); } catch (e) { /* ok */ }
         }
 
         await HeroSlide.findByIdAndDelete(req.params.id);

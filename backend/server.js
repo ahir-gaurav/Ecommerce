@@ -15,6 +15,7 @@ import reviewRoutes from './routes/reviews.js';
 import adminRoutes from './routes/admin.js';
 import paymentRoutes from './routes/payments.js';
 import heroRoutes from './routes/hero.js';
+import fragranceRoutes from './routes/fragrances.js';
 
 // Import cron jobs
 import './cron/analytics.js';
@@ -73,6 +74,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/hero', heroRoutes);
+app.use('/api/fragrances', fragranceRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

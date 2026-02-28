@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { productAPI } from '../api';
+import { productAPI, fragranceAPI } from '../api';
 
 function Products() {
     const [products, setProducts] = useState([]);
@@ -11,6 +11,7 @@ function Products() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [fragrances, setFragrances] = useState([]);
 
     const emptyForm = {
         name: 'Kicks Don\'t Stink - Eco Shoe Deodoriser',
@@ -22,7 +23,7 @@ function Products() {
     const emptyVariant = {
         type: 'Standard',
         size: 'Medium',
-        fragrance: 'Lavender',
+        fragrance: '',
         priceAdjustment: 0,
         stock: 0,
         sku: ''
@@ -36,6 +37,7 @@ function Products() {
 
     useEffect(() => {
         fetchProducts();
+        fetchFragrances();
     }, []);
 
     const fetchProducts = async () => {
@@ -47,6 +49,28 @@ function Products() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchFragrances = async () => {
+        try {
+            const res = await fragranceAPI.getAll();
+            const list = res.data.fragrances || [];
+            setFragrances(list);
+            // Set the first fragrance as default if available
+            if (list.length > 0) {
+                setVariantForm(v => ({ ...v, fragrance: list[0].name }));
+            }
+        } catch (err) {
+            // Fall back to hardcoded if API fails
+            setFragrances([]);
+        }
+    };
+
+    // Returns a usable image src — handles both Cloudinary (http) and local (/uploads) URLs
+    const getImageSrc = (url) => {
+        if (!url) return '';
+        if (url.startsWith('http://') || url.startsWith('https://')) return url;
+        return `${import.meta.env.VITE_API_URL.replace('/api', '')}${url}`;
     };
 
     const handleImageUpload = async (e) => {
@@ -63,11 +87,9 @@ function Products() {
         try {
             await productAPI.uploadImages(selectedProduct._id, formData);
             setSuccess('Images uploaded successfully');
-            // Refresh products to show new images
             const res = await productAPI.getAll();
             const updatedProducts = res.data.products;
             setProducts(updatedProducts);
-            // Update selected product to show new images in modal
             setSelectedProduct(updatedProducts.find(p => p._id === selectedProduct._id));
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to upload images');
@@ -82,11 +104,9 @@ function Products() {
         try {
             await productAPI.deleteImage(selectedProduct._id, imageId);
             setSuccess('Image deleted');
-            // Refresh products
             const res = await productAPI.getAll();
             const updatedProducts = res.data.products;
             setProducts(updatedProducts);
-            // Update selected product
             setSelectedProduct(updatedProducts.find(p => p._id === selectedProduct._id));
         } catch (err) {
             setError('Failed to delete image');
@@ -170,8 +190,6 @@ function Products() {
 
     if (loading) return <div className="loading-page"><div className="spinner"></div></div>;
 
-    const API_URL = import.meta.env.VITE_API_URL.replace('/api', '');
-
     return (
         <div>
             <div className="page-header">
@@ -212,7 +230,7 @@ function Products() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             {product.images && product.images.length > 0 ? (
                                                 <img
-                                                    src={`${API_URL}${product.images[0].url}`}
+                                                    src={getImageSrc(product.images[0].url)}
                                                     alt={product.name}
                                                     style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
                                                 />
@@ -238,7 +256,12 @@ function Products() {
                                         <div className="flex gap-8">
                                             <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(product)}>Edit</button>
                                             <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedProduct(product); setShowImageModal(true); }}>Images</button>
-                                            <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedProduct(product); setVariantForm(emptyVariant); setShowVariantModal(true); }}>+ Variant</button>
+                                            <button className="btn btn-secondary btn-sm" onClick={() => {
+                                                setSelectedProduct(product);
+                                                const defaultFragrance = fragrances.length > 0 ? fragrances[0].name : '';
+                                                setVariantForm({ ...emptyVariant, fragrance: defaultFragrance });
+                                                setShowVariantModal(true);
+                                            }}>+ Variant</button>
                                             <button className="btn btn-danger btn-sm" onClick={() => handleDelete(product._id)}>Delete</button>
                                         </div>
                                     </td>
@@ -307,7 +330,7 @@ function Products() {
                             {selectedProduct?.images?.map((img) => (
                                 <div key={img._id} style={{ position: 'relative', aspectRatio: '1', border: '1px solid #eee', borderRadius: '8px', overflow: 'hidden' }}>
                                     <img
-                                        src={`${API_URL}${img.url}`}
+                                        src={getImageSrc(img.url)}
                                         alt=""
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                     />
@@ -373,10 +396,18 @@ function Products() {
                                 <div className="form-group">
                                     <label>Fragrance</label>
                                     <select value={variantForm.fragrance} onChange={(e) => setVariantForm({ ...variantForm, fragrance: e.target.value })}>
-                                        <option>Lavender</option>
-                                        <option>Cedar</option>
-                                        <option>Unscented</option>
-                                        <option>Mixed</option>
+                                        {fragrances.length > 0 ? (
+                                            fragrances.map(f => (
+                                                <option key={f._id} value={f.name}>{f.name}</option>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <option>Lavender</option>
+                                                <option>Cedar</option>
+                                                <option>Unscented</option>
+                                                <option>Mixed</option>
+                                            </>
+                                        )}
                                     </select>
                                 </div>
                             </div>

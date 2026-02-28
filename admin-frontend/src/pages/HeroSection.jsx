@@ -39,6 +39,13 @@ function HeroSection() {
         }
     };
 
+    // Handle both Cloudinary (absolute) and local /uploads URLs
+    const getImageSrc = (url) => {
+        if (!url) return '';
+        if (url.startsWith('http://') || url.startsWith('https://')) return url;
+        return `${import.meta.env.VITE_API_URL.replace('/api', '')}${url}`;
+    };
+
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -64,7 +71,7 @@ function HeroSection() {
         formData.append('bgColor', form.bgColor);
         formData.append('order', form.order);
         formData.append('isActive', form.isActive);
-        if (form.image) {
+        if (form.image instanceof File) {
             formData.append('image', form.image);
         }
 
@@ -100,7 +107,7 @@ function HeroSection() {
             isActive: slide.isActive,
             image: null
         });
-        setImagePreview(slide.image ? `${import.meta.env.VITE_API_URL.replace('/api', '')}${slide.image}` : null);
+        setImagePreview(slide.image ? getImageSrc(slide.image) : null);
         setShowModal(true);
     };
 
@@ -123,8 +130,6 @@ function HeroSection() {
     }, [success]);
 
     if (loading) return <div className="loading-page"><div className="spinner"></div></div>;
-
-    const API_URL = import.meta.env.VITE_API_URL.replace('/api', '');
 
     return (
         <div>
@@ -175,7 +180,7 @@ function HeroSection() {
                                             }}>
                                                 {slide.image && (
                                                     <img
-                                                        src={`${API_URL}${slide.image}`}
+                                                        src={getImageSrc(slide.image)}
                                                         alt=""
                                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                     />
@@ -261,7 +266,7 @@ function HeroSection() {
                                         </div>
                                     )}
                                     <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
-                                        Choose Image
+                                        {imagePreview ? 'Change Image' : 'Choose Image'}
                                         <input type="file" accept="image/*" onChange={handleFileChange} hidden />
                                     </label>
                                 </div>

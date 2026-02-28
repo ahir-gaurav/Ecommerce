@@ -23,6 +23,10 @@ const heroSlideSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    imagePublicId: {
+        type: String,
+        default: ''
+    },
     bgColor: {
         type: String,
         default: '#f5f0eb'

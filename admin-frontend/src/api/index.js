@@ -91,4 +91,13 @@ export const userAPI = {
     getAll: () => api.get('admin/users')
 };
 
+// Fragrance APIs
+export const fragranceAPI = {
+    getAll: () => api.get('fragrances'),
+    getAllAdmin: () => api.get('fragrances/all'),
+    create: (data) => api.post('fragrances', data),
+    update: (id, data) => api.put(`fragrances/${id}`, data),
+    delete: (id) => api.delete(`fragrances/${id}`)
+};
+
 export default api;

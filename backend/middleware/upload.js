@@ -28,6 +28,22 @@ export const uploadImages = multer({
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 }).array('images', 5);
 
+// Cloudinary storage for hero images
+const heroStorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'kicks-dont-stink/hero',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1920, height: 800, crop: 'limit', quality: 'auto' }]
+    }
+});
+
+// Hero upload middleware — stores directly to Cloudinary
+export const uploadHero = multer({
+    storage: heroStorage,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+}).single('image');
+
 // Keep model upload using memory storage (not used in production critical path)
 export const uploadModel = multer({
     storage: multer.memoryStorage(),
