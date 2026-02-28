@@ -11,6 +11,7 @@ function Product() {
     const [selectedVariant, setSelectedVariant] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [selectedImage, setSelectedImage] = useState(null);
     const { addToCart } = useCart();
 
     useEffect(() => {
@@ -20,10 +21,13 @@ function Product() {
     const fetchProduct = async () => {
         try {
             const response = await productAPI.getById(id);
-            setProduct(response.data.product);
-            if (response.data.product.variants.length > 0) {
-                setSelectedVariant(response.data.product.variants[0]);
+            const p = response.data.product;
+            setProduct(p);
+            if (p.variants.length > 0) {
+                setSelectedVariant(p.variants[0]);
             }
+            const primary = p.images?.find(img => img.isPrimary) || p.images?.[0];
+            setSelectedImage(primary || null);
         } catch (error) {
             console.error('Failed to fetch product:', error);
         } finally {
@@ -55,7 +59,6 @@ function Product() {
     }
 
     const finalPrice = product.basePrice + (selectedVariant?.priceAdjustment || 0);
-
     const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 
     const getImageUrl = (img) => {
@@ -64,7 +67,7 @@ function Product() {
         return `${API_URL}${img.url}`;
     };
 
-    const primaryImage = product.images?.find(img => img.isPrimary) || product.images?.[0];
+    const images = product.images || [];
 
     return (
         <div className="product-page">
@@ -75,15 +78,32 @@ function Product() {
                         initial={{ opacity: 0, x: -30 }}
                         animate={{ opacity: 1, x: 0 }}
                     >
-                        {primaryImage ? (
+                        {/* Main Image */}
+                        {selectedImage ? (
                             <div className="product-main-image">
-                                <img src={getImageUrl(primaryImage)} alt={product.name} />
+                                <img src={getImageUrl(selectedImage)} alt={product.name} />
                             </div>
                         ) : (
                             <div className="product-image-placeholder">
                                 <div className="product-icon-large">👟</div>
                             </div>
                         )}
+
+                        {/* Thumbnail Strip — only shown when more than 1 image */}
+                        {images.length > 1 && (
+                            <div className="product-thumbnails">
+                                {images.map((img) => (
+                                    <button
+                                        key={img._id}
+                                        className={`product-thumbnail ${selectedImage?._id === img._id ? 'active' : ''}`}
+                                        onClick={() => setSelectedImage(img)}
+                                    >
+                                        <img src={getImageUrl(img)} alt={product.name} />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="eco-features">
                             <div className="eco-badge">🌍 Eco-Friendly</div>
                             <div className="eco-badge">♻️ Biodegradable</div>

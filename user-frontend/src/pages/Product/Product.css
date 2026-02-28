@@ -26,7 +26,8 @@
 .product-main-image img {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Using contain to ensure the whole shoe is visible */
+    object-fit: contain;
+    /* Using contain to ensure the whole shoe is visible */
     background: #f8f8f6;
 }
 
@@ -52,6 +53,45 @@
     gap: 8px;
     margin-top: 16px;
 }
+
+/* ---- Thumbnail Gallery ---- */
+.product-thumbnails {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.product-thumbnail {
+    width: 72px;
+    height: 72px;
+    border: 2px solid #e0e0e0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    padding: 0;
+    background: #f8f8f6;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    flex-shrink: 0;
+}
+
+.product-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.product-thumbnail:hover {
+    border-color: #888;
+    transform: scale(1.05);
+}
+
+.product-thumbnail.active {
+    border-color: #1a1a1a;
+    border-width: 2px;
+}
+
 
 .product-info-section h1 {
     font-size: var(--font-size-3xl);
