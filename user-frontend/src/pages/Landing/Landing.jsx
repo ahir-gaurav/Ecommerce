@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { productAPI } from '../../api';
 import { ContainerScroll } from '../../components/ui/container-scroll-animation';
 import './Landing.css';
 
 function Landing() {
+    const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -112,8 +113,8 @@ function Landing() {
                                 Bamboo charcoal, cedar & lavender — zero chemicals, 100% biodegradable. Reusable for months.
                             </p>
                             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                <a
-                                    href="#products"
+                                <button
+                                    onClick={() => navigate('/shop')}
                                     style={{
                                         display: 'inline-block',
                                         padding: '14px 32px',
@@ -122,7 +123,8 @@ function Landing() {
                                         borderRadius: '50px',
                                         fontWeight: '700',
                                         fontSize: '15px',
-                                        textDecoration: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
                                         boxShadow: '0 4px 24px rgba(34,197,94,0.4)',
                                         transition: 'transform 0.2s, box-shadow 0.2s',
                                         letterSpacing: '0.5px',
@@ -131,9 +133,11 @@ function Landing() {
                                     onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(34,197,94,0.4)'; }}
                                 >
                                     Shop Now →
-                                </a>
-                                <a
-                                    href="#products"
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+                                    }}
                                     style={{
                                         display: 'inline-block',
                                         padding: '14px 32px',
@@ -142,15 +146,15 @@ function Landing() {
                                         borderRadius: '50px',
                                         fontWeight: '600',
                                         fontSize: '15px',
-                                        textDecoration: 'none',
                                         border: '2px solid rgba(255,255,255,0.2)',
+                                        cursor: 'pointer',
                                         transition: 'border-color 0.2s, background 0.2s',
                                     }}
                                     onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
                                     onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.background = 'transparent'; }}
                                 >
                                     View Collection
-                                </a>
+                                </button>
                             </div>
                         </div>
                     }
