@@ -41,13 +41,15 @@ function Landing() {
 
             if (heroRes.status === 'fulfilled') {
                 const cfg = heroRes.value.data.config;
-                if (cfg) {
+                console.log('🎯 Hero Config:', cfg); // Debugging
+                if (cfg && cfg.isActive) {
                     setHero({
                         badgeText: cfg.badgeText || HERO_DEFAULTS.badgeText,
                         title: cfg.title || HERO_DEFAULTS.title,
                         highlightText: cfg.highlightText || HERO_DEFAULTS.highlightText,
                         description: cfg.description || HERO_DEFAULTS.description,
                         image: cfg.image || HERO_DEFAULTS.image,
+                        _updated: cfg.updatedAt || Date.now(), // Force refresh
                     });
                 }
             }
@@ -92,9 +94,14 @@ function Landing() {
         return `${API_URL}${primary.url}`;
     };
 
-    const heroImageSrc = hero.image
-        ? (hero.image.startsWith('http') ? hero.image : `${API_URL}${hero.image}`)
-        : HERO_DEFAULTS.image;
+    const getHeroImage = () => {
+        if (!hero.image) return HERO_DEFAULTS.image;
+        const base = hero.image.startsWith('http') ? hero.image : `${API_URL}${hero.image}`;
+        // Add cache buster timestamp
+        return `${base}${base.includes('?') ? '&' : '?'}t=${hero._updated || Date.now()}`;
+    };
+
+    const heroImageSrc = getHeroImage();
 
     return (
         <div className="landing">
