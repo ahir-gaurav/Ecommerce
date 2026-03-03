@@ -30,7 +30,6 @@ router.get('/all', verifyToken, requireAdmin, async (req, res) => {
 });
 
 // CREATE or UPDATE hero config (admin)
-// Uses upsert: if a config already exists, update it; otherwise create one
 router.post('/', verifyToken, requireAdmin, (req, res) => {
     uploadHero(req, res, async (err) => {
         if (err) {
@@ -40,41 +39,32 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
         try {
             const { badgeText, title, highlightText, description, isActive } = req.body;
 
-            // Find existing config or create new
-            let config = await HeroSlide.findOne().sort({ updatedAt: -1 });
+            // Build the update object
+            const updateData = {};
+            if (badgeText !== undefined) updateData.badgeText = badgeText;
+            if (title !== undefined) updateData.title = title;
+            if (highlightText !== undefined) updateData.highlightText = highlightText;
+            if (description !== undefined) updateData.description = description;
+            if (isActive !== undefined) updateData.isActive = isActive === 'true' || isActive === true;
 
-            if (config) {
-                // Update existing
-                if (badgeText !== undefined) config.badgeText = badgeText;
-                if (title !== undefined) config.title = title;
-                if (highlightText !== undefined) config.highlightText = highlightText;
-                if (description !== undefined) config.description = description;
-                if (isActive !== undefined) config.isActive = isActive === 'true' || isActive === true;
-
-                if (req.file) {
-                    // Delete old image from Cloudinary
-                    if (config.imagePublicId) {
-                        try { await cloudinary.uploader.destroy(config.imagePublicId); } catch (e) { /* ok */ }
-                    }
-                    config.image = req.file.path;
-                    config.imagePublicId = req.file.filename;
+            // If a new image was uploaded, first delete the old one from Cloudinary
+            if (req.file) {
+                const existing = await HeroSlide.findOne().sort({ updatedAt: -1 });
+                if (existing?.imagePublicId) {
+                    try { await cloudinary.uploader.destroy(existing.imagePublicId); } catch (e) { /* ok */ }
                 }
-
-                await config.save();
-                res.json({ success: true, config });
-            } else {
-                // Create new config
-                config = await HeroSlide.create({
-                    badgeText: badgeText || '🌿 100% Eco-Friendly Shoe Care',
-                    title: title || 'Keep Your Kicks',
-                    highlightText: highlightText || 'Naturally Fresh',
-                    description: description || 'Bamboo charcoal, cedar & lavender — zero chemicals, 100% biodegradable. Reusable for months.',
-                    image: req.file ? req.file.path : '',
-                    imagePublicId: req.file ? req.file.filename : '',
-                    isActive: isActive !== undefined ? (isActive === 'true' || isActive === true) : true
-                });
-                res.status(201).json({ success: true, config });
+                updateData.image = req.file.path;           // Cloudinary HTTPS URL
+                updateData.imagePublicId = req.file.filename; // Cloudinary public_id
             }
+
+            // findOneAndUpdate with upsert — always returns the updated document
+            const config = await HeroSlide.findOneAndUpdate(
+                {},                          // match any (there's only one config)
+                { $set: updateData },
+                { new: true, upsert: true, sort: { updatedAt: -1 } }
+            );
+
+            res.json({ success: true, config });
         } catch (error) {
             console.error('Hero config save error:', error.message);
             res.status(500).json({ success: false, message: error.message || 'Failed to save hero config' });

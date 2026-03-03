@@ -68,7 +68,16 @@ function HeroSection() {
         fd.append('isActive', form.isActive);
         if (form.image instanceof File) fd.append('image', form.image);
         try {
-            await heroAPI.save(fd);
+            const res = await heroAPI.save(fd);
+            const savedConfig = res.data.config;
+            // Update imagePreview with the real Cloudinary URL returned by the server
+            if (savedConfig?.image) {
+                const imgUrl = savedConfig.image.startsWith('http')
+                    ? savedConfig.image
+                    : `${API_BASE}${savedConfig.image}`;
+                setImagePreview(imgUrl);
+                setForm(f => ({ ...f, image: savedConfig.image }));
+            }
             setSuccess('Hero section saved!');
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to save');
