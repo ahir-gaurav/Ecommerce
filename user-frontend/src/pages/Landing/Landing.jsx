@@ -256,8 +256,16 @@ function Landing() {
                             <div className="variants-grid">
                                 {allVariants.map((variant, index) => {
                                     const finalPrice = variant.product.basePrice + (variant.priceAdjustment || 0);
+                                    const imgUrl = getProductImage(variant.product);
                                     return (
                                         <div key={variant._id || index} className="variant-product-card">
+                                            {imgUrl && (
+                                                <img
+                                                    src={imgUrl}
+                                                    alt={variant.product.name}
+                                                    style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', marginBottom: '12px' }}
+                                                />
+                                            )}
                                             <div className="vpc-badge">{variant.size}</div>
                                             <div className="vpc-fragrance">🌸 {variant.fragrance}</div>
                                             <h4 className="vpc-name">{variant.product.name}</h4>
