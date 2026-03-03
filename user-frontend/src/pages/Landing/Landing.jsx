@@ -1,14 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { productAPI, heroAPI } from '../../api';
+import { productAPI } from '../../api';
+import { ContainerScroll } from '../../components/ui/container-scroll-animation';
 import './Landing.css';
 
 function Landing() {
     const [products, setProducts] = useState([]);
-    const [heroSlides, setHeroSlides] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const intervalRef = useRef(null);
 
     // Filter / Sort state
     const [activeType, setActiveType] = useState('All');
@@ -21,63 +19,15 @@ function Landing() {
 
     const fetchInitialData = async () => {
         try {
-            const [productRes, heroRes] = await Promise.all([
-                productAPI.getAll(),
-                heroAPI.getSlides()
-            ]);
-
+            const productRes = await productAPI.getAll();
             const fetchedProducts = productRes.data.products || productRes.data || [];
             setProducts(fetchedProducts);
-
-            const fetchedHeroSlides = heroRes.data.slides || [];
-
-            if (fetchedHeroSlides.length > 0) {
-                setHeroSlides(fetchedHeroSlides);
-            } else {
-                // Build hero slides from product images or fallback
-                const slides = [];
-                fetchedProducts.forEach((product) => {
-                    if (product.images && product.images.length > 0) {
-                        product.images.forEach((img) => {
-                            slides.push({
-                                image: img.url,
-                                title: product.name,
-                                subtitle: product.description?.substring(0, 60) + '...',
-                                ctaLink: `/product/${product._id}`,
-                                ctaText: 'Shop Now'
-                            });
-                        });
-                    }
-                });
-
-                if (slides.length === 0) {
-                    setHeroSlides([
-                        { title: 'Keep Your Kicks Fresh', subtitle: 'Naturally', bgColor: '#f5f0eb', ctaLink: '#products', ctaText: 'Shop Now' },
-                        { title: 'Eco-Friendly', subtitle: 'Shoe Care', bgColor: '#eef2e7', ctaLink: '#products', ctaText: 'Shop Now' },
-                        { title: 'Zero Chemicals', subtitle: 'Pure Freshness', bgColor: '#f0ebe5', ctaLink: '#products', ctaText: 'Shop Now' },
-                    ]);
-                } else {
-                    setHeroSlides(slides);
-                }
-            }
         } catch (error) {
             console.error('Failed to fetch landing data:', error);
-            setHeroSlides([
-                { title: 'Keep Your Kicks Fresh', subtitle: 'Naturally', bgColor: '#f5f0eb', ctaLink: '#products', ctaText: 'Shop Now' }
-            ]);
         } finally {
             setLoading(false);
         }
     };
-
-    // Auto-rotate
-    useEffect(() => {
-        if (heroSlides.length <= 1) return;
-        intervalRef.current = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-        }, 4000);
-        return () => clearInterval(intervalRef.current);
-    }, [heroSlides.length]);
 
     // Group product variants by type
     const getVariantsByType = () => {
@@ -114,55 +64,111 @@ function Landing() {
         return `${API_URL}${primary.url}`;
     };
 
+
     return (
         <div className="landing">
-            {/* Hero — Rotating Image Carousel */}
-            <section className="hero-carousel">
-                {loading ? (
-                    <div className="carousel-track" style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div className="spinner"></div>
-                    </div>
-                ) : (
-                    <div className="carousel-track">
-                        {heroSlides.map((slide, i) => (
-                            <div
-                                key={slide._id || i}
-                                className={`carousel-slide ${i === currentSlide ? 'active' : ''}`}
-                                style={{ backgroundColor: slide.bgColor || '#f5f0eb' }}
-                            >
-                                {slide.image ? (
-                                    <div className={`hero-slide-content has-image text-pos-${slide.textPosition || 'right'}`}>
-                                        <div className="hero-text-overlay">
-                                            <h1 className="carousel-heading">{slide.title}</h1>
-                                            <p className="carousel-sub">{slide.subtitle}</p>
-                                            <a href={slide.ctaLink || '#products'} className="carousel-cta">{slide.ctaText || 'Shop Now'}</a>
-                                        </div>
-                                        <img src={slide.image?.startsWith('http') ? slide.image : `${API_URL}${slide.image}`} alt={slide.title} className="carousel-img" />
-                                    </div>
-                                ) : (
-                                    <div className={`carousel-text-slide text-pos-${slide.textPosition || 'right'}`}>
-                                        <h1 className="carousel-heading">{slide.title}</h1>
-                                        <p className="carousel-sub">{slide.subtitle}</p>
-                                        <a href={slide.ctaLink || '#products'} className="carousel-cta">{slide.ctaText || 'Shop Now'}</a>
-                                    </div>
-                                )}
+            {/* Hero — Scroll Animation */}
+            <section style={{ background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0d1f0d 100%)', overflow: 'hidden' }}>
+                <ContainerScroll
+                    titleComponent={
+                        <div style={{ padding: '0 20px' }}>
+                            <p style={{
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                letterSpacing: '3px',
+                                textTransform: 'uppercase',
+                                color: '#6ee77a',
+                                marginBottom: '16px',
+                                display: 'block',
+                            }}>
+                                🌿 100% Eco-Friendly Shoe Care
+                            </p>
+                            <h1 style={{
+                                fontSize: 'clamp(2rem, 6vw, 5rem)',
+                                fontWeight: '800',
+                                lineHeight: '1.1',
+                                color: '#ffffff',
+                                marginBottom: '24px',
+                                letterSpacing: '-1px',
+                            }}>
+                                Keep Your Kicks{' '}
+                                <span style={{
+                                    background: 'linear-gradient(135deg, #6ee77a, #22c55e)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text',
+                                }}>
+                                    Naturally Fresh
+                                </span>
+                            </h1>
+                            <p style={{
+                                fontSize: 'clamp(1rem, 2vw, 1.25rem)',
+                                color: '#9ca3af',
+                                marginBottom: '32px',
+                                maxWidth: '520px',
+                                margin: '0 auto 32px',
+                                lineHeight: '1.7',
+                            }}>
+                                Bamboo charcoal, cedar & lavender — zero chemicals, 100% biodegradable. Reusable for months.
+                            </p>
+                            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                <a
+                                    href="#products"
+                                    style={{
+                                        display: 'inline-block',
+                                        padding: '14px 32px',
+                                        background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                                        color: '#fff',
+                                        borderRadius: '50px',
+                                        fontWeight: '700',
+                                        fontSize: '15px',
+                                        textDecoration: 'none',
+                                        boxShadow: '0 4px 24px rgba(34,197,94,0.4)',
+                                        transition: 'transform 0.2s, box-shadow 0.2s',
+                                        letterSpacing: '0.5px',
+                                    }}
+                                    onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(34,197,94,0.5)'; }}
+                                    onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(34,197,94,0.4)'; }}
+                                >
+                                    Shop Now →
+                                </a>
+                                <a
+                                    href="#products"
+                                    style={{
+                                        display: 'inline-block',
+                                        padding: '14px 32px',
+                                        background: 'transparent',
+                                        color: '#fff',
+                                        borderRadius: '50px',
+                                        fontWeight: '600',
+                                        fontSize: '15px',
+                                        textDecoration: 'none',
+                                        border: '2px solid rgba(255,255,255,0.2)',
+                                        transition: 'border-color 0.2s, background 0.2s',
+                                    }}
+                                    onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                                    onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                    View Collection
+                                </a>
                             </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Dots */}
-                {heroSlides.length > 1 && (
-                    <div className="carousel-dots">
-                        {heroSlides.map((_, i) => (
-                            <button
-                                key={i}
-                                className={`dot ${i === currentSlide ? 'active' : ''}`}
-                                onClick={() => setCurrentSlide(i)}
-                            />
-                        ))}
-                    </div>
-                )}
+                        </div>
+                    }
+                >
+                    {/* Hero image inside the 3D card */}
+                    <img
+                        src="https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=1400&q=80"
+                        alt="Premium eco-friendly shoe care products"
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center',
+                            borderRadius: '12px',
+                            display: 'block',
+                        }}
+                    />
+                </ContainerScroll>
             </section>
 
             {/* Marquee Banner */}
