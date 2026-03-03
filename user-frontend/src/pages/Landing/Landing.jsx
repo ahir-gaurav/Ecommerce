@@ -42,7 +42,7 @@ function Landing() {
             if (heroRes.status === 'fulfilled') {
                 const cfg = heroRes.value.data.config;
                 console.log('🎯 Hero Config:', cfg); // Debugging
-                if (cfg && cfg.isActive) {
+                if (cfg) {
                     setHero({
                         badgeText: cfg.badgeText || HERO_DEFAULTS.badgeText,
                         title: cfg.title || HERO_DEFAULTS.title,
