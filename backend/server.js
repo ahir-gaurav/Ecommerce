@@ -16,6 +16,8 @@ import adminRoutes from './routes/admin.js';
 import paymentRoutes from './routes/payments.js';
 import heroRoutes from './routes/hero.js';
 import fragranceRoutes from './routes/fragrances.js';
+import tickerRoutes from './routes/ticker.js';
+import couponRoutes from './routes/coupon.js';
 
 // Import cron jobs
 import './cron/analytics.js';
@@ -75,6 +77,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/hero', heroRoutes);
 app.use('/api/fragrances', fragranceRoutes);
+app.use('/api/tickers', tickerRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

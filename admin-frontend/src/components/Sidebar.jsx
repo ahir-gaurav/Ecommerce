@@ -38,6 +38,14 @@ function Sidebar() {
                     <span className="nav-icon">🌸</span>
                     Fragrances
                 </NavLink>
+                <NavLink to="/tickers">
+                    <span className="nav-icon">📢</span>
+                    Ticker section
+                </NavLink>
+                <NavLink to="/coupons">
+                    <span className="nav-icon">🎟️</span>
+                    Coupons
+                </NavLink>
                 <NavLink to="/users">
                     <span className="nav-icon">👥</span>
                     Users

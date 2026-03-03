@@ -10,6 +10,8 @@ import Users from './pages/Users';
 import HeroSection from './pages/HeroSection';
 import Settings from './pages/Settings';
 import Fragrances from './pages/Fragrances';
+import Tickers from './pages/Tickers';
+import Coupons from './pages/Coupons';
 
 // Protected route wrapper
 function ProtectedRoute() {
@@ -74,6 +76,8 @@ function App() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/hero" element={<HeroSection />} />
             <Route path="/fragrances" element={<Fragrances />} />
+            <Route path="/tickers" element={<Tickers />} />
+            <Route path="/coupons" element={<Coupons />} />
             <Route path="/users" element={<Users />} />
             <Route path="/settings" element={<Settings />} />
           </Route>

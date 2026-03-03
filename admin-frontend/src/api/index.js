@@ -94,4 +94,22 @@ export const fragranceAPI = {
     delete: (id) => api.delete(`fragrances/${id}`)
 };
 
+// Ticker APIs
+export const tickerAPI = {
+    getAll: () => api.get('tickers'),
+    getAllAdmin: () => api.get('tickers/admin'),
+    create: (data) => api.post('tickers', data),
+    update: (id, data) => api.put(`tickers/${id}`, data),
+    delete: (id) => api.delete(`tickers/${id}`)
+};
+
+// Coupon APIs
+export const couponAPI = {
+    getAll: () => api.get('coupons'),
+    create: (data) => api.post('coupons', data),
+    update: (id, data) => api.put(`coupons/${id}`, data),
+    delete: (id) => api.delete(`coupons/${id}`),
+    validate: (data) => api.post('coupons/validate', data)
+};
+
 export default api;

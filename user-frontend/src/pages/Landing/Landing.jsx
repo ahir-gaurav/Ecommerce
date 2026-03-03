@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { productAPI, heroAPI } from '../../api';
+import { productAPI, heroAPI, tickerAPI } from '../../api';
 import { ContainerScroll } from '../../components/ui/container-scroll-animation';
 import './Landing.css';
 
@@ -17,6 +17,7 @@ function Landing() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [hero, setHero] = useState(HERO_DEFAULTS);
+    const [tickers, setTickers] = useState([]);
 
     // Filter / Sort state
     const [activeType, setActiveType] = useState('All');
@@ -29,9 +30,10 @@ function Landing() {
 
     const fetchInitialData = async () => {
         try {
-            const [productRes, heroRes] = await Promise.allSettled([
+            const [productRes, heroRes, tickerRes] = await Promise.allSettled([
                 productAPI.getAll(),
-                heroAPI.getConfig()
+                heroAPI.getConfig(),
+                tickerAPI.getAll()
             ]);
 
             if (productRes.status === 'fulfilled') {
@@ -84,6 +86,10 @@ function Landing() {
                         _updated: Date.now(),
                     });
                 }
+            }
+
+            if (tickerRes.status === 'fulfilled') {
+                setTickers(tickerRes.value.data.tickers || []);
             }
         } catch (error) {
             console.error('Failed to fetch landing data:', error);
@@ -247,16 +253,28 @@ function Landing() {
             {/* Marquee Banner */}
             <div className="marquee-banner">
                 <div className="marquee-track">
-                    <span>🌿 100% Eco-Friendly</span>
-                    <span>♻️ Biodegradable</span>
-                    <span>🌱 Chemical-Free</span>
-                    <span>✨ Reusable for Months</span>
-                    <span>🌍 Plastic-Free Packaging</span>
-                    <span>🌿 100% Eco-Friendly</span>
-                    <span>♻️ Biodegradable</span>
-                    <span>🌱 Chemical-Free</span>
-                    <span>✨ Reusable for Months</span>
-                    <span>🌍 Plastic-Free Packaging</span>
+                    {tickers.length > 0 ? (
+                        // Render items twice for seamless loop
+                        [...tickers, ...tickers].map((ticker, i) => (
+                            <span key={`${ticker._id}-${i}`}>
+                                {ticker.icon} {ticker.text}
+                            </span>
+                        ))
+                    ) : (
+                        // Fallback static items if none in DB
+                        <>
+                            <span>🌿 100% Eco-Friendly</span>
+                            <span>♻️ Biodegradable</span>
+                            <span>🌱 Chemical-Free</span>
+                            <span>✨ Reusable for Months</span>
+                            <span>🌍 Plastic-Free Packaging</span>
+                            <span>🌿 100% Eco-Friendly</span>
+                            <span>♻️ Biodegradable</span>
+                            <span>🌱 Chemical-Free</span>
+                            <span>✨ Reusable for Months</span>
+                            <span>🌍 Plastic-Free Packaging</span>
+                        </>
+                    )}
                 </div>
             </div>
 

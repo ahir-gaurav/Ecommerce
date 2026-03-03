@@ -83,4 +83,14 @@ export const heroAPI = {
     getConfig: () => api.get('hero')
 };
 
+// Ticker APIs
+export const tickerAPI = {
+    getAll: () => api.get('tickers')
+};
+
+// Coupon APIs
+export const couponAPI = {
+    validate: (data) => api.post('coupons/validate', data)
+};
+
 export default api;
