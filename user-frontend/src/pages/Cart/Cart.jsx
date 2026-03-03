@@ -13,7 +13,7 @@ function Cart() {
                 <div className="container">
                     <h2>Your cart is empty</h2>
                     <p>Add some eco-friendly products to get started!</p>
-                    <Link to="/product/1" className="btn btn-primary btn-lg">
+                    <Link to="/shop" className="btn btn-primary btn-lg">
                         Shop Now
                     </Link>
                 </div>
