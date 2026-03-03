@@ -64,13 +64,20 @@ function AppRoutes() {
   );
 }
 
+// Reads the logged-in user from AuthContext and passes their ID to CartProvider
+// This ensures the cart is user-scoped and clears automatically on logout
+function CartProviderWrapper({ children }) {
+  const { user } = useAuth();
+  return <CartProvider userId={user?._id}>{children}</CartProvider>;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <CartProvider>
+        <CartProviderWrapper>
           <AppRoutes />
-        </CartProvider>
+        </CartProviderWrapper>
       </AuthProvider>
     </BrowserRouter>
   );

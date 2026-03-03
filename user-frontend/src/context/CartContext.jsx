@@ -10,15 +10,29 @@ export const useCart = () => {
     return context;
 };
 
-export const CartProvider = ({ children }) => {
-    const [cart, setCart] = useState(() => {
-        const saved = localStorage.getItem('cart');
-        return saved ? JSON.parse(saved) : [];
-    });
+export const CartProvider = ({ userId, children }) => {
+    // Use a user-specific key so each user has their own cart
+    const cartKey = userId ? `cart_${userId}` : null;
 
+    const [cart, setCart] = useState([]);
+
+    // Whenever the user changes (login/logout), load the correct cart
     useEffect(() => {
-        localStorage.setItem('cart', JSON.stringify(cart));
-    }, [cart]);
+        if (cartKey) {
+            const saved = localStorage.getItem(cartKey);
+            setCart(saved ? JSON.parse(saved) : []);
+        } else {
+            // No user logged in → show empty cart
+            setCart([]);
+        }
+    }, [cartKey]);
+
+    // Persist cart to localStorage whenever it changes (only when logged in)
+    useEffect(() => {
+        if (cartKey) {
+            localStorage.setItem(cartKey, JSON.stringify(cart));
+        }
+    }, [cart, cartKey]);
 
     const addToCart = (product, variant, quantity = 1) => {
         setCart(prevCart => {
@@ -74,6 +88,7 @@ export const CartProvider = ({ children }) => {
 
     const clearCart = () => {
         setCart([]);
+        if (cartKey) localStorage.removeItem(cartKey);
     };
 
     const getCartTotal = () => {
