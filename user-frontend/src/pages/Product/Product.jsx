@@ -15,6 +15,7 @@ function Product() {
     const { addToCart } = useCart();
 
     useEffect(() => {
+        window.scrollTo(0, 0);
         fetchProduct();
     }, [id]);
 
