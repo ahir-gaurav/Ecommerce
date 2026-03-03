@@ -195,83 +195,18 @@ function Landing() {
                         <p>Choose your perfect shoe care</p>
                     </div>
 
-                    {/* Filter / Sort Toolbar */}
-                    {!loading && hasVariants && (
-                        <div className="collection-toolbar">
-                            {/* Category pills */}
-                            <div className="toolbar-pills">
-                                {['All', 'Standard', 'Premium', 'Deluxe'].map((type) => (
-                                    <button
-                                        key={type}
-                                        className={`pill-btn ${activeType === type ? 'active' : ''}`}
-                                        onClick={() => setActiveType(type)}
-                                    >
-                                        {type === 'All' ? '🛒 All Products' : `${typeIcons[type]} ${type}`}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Sort & stock filter */}
-                            <div className="toolbar-controls">
-                                <label className="stock-toggle">
-                                    <input
-                                        type="checkbox"
-                                        checked={showInStock}
-                                        onChange={(e) => setShowInStock(e.target.checked)}
-                                    />
-                                    In Stock Only
-                                </label>
-                                <select
-                                    className="sort-select"
-                                    value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value)}
-                                >
-                                    <option value="default">Sort By: Default</option>
-                                    <option value="price-asc">Price: Low → High</option>
-                                    <option value="price-desc">Price: High → Low</option>
-                                    <option value="name-asc">Name: A → Z</option>
-                                </select>
-                            </div>
-                        </div>
-                    )}
-
                     {loading ? (
                         <div className="flex-center" style={{ padding: '60px 0' }}>
                             <div className="spinner"></div>
                         </div>
                     ) : hasVariants ? (() => {
-                        // Flatten all variants
-                        let allVariants = Object.values(variantsByType).flat();
-
-                        // Filter by type
-                        if (activeType !== 'All') {
-                            allVariants = allVariants.filter(v => v.type === activeType);
-                        }
-
-                        // Filter in stock
-                        if (showInStock) {
-                            allVariants = allVariants.filter(v => v.stock > 0);
-                        }
-
-                        // Sort
-                        if (sortBy === 'price-asc') {
-                            allVariants = [...allVariants].sort((a, b) =>
-                                (a.product.basePrice + (a.priceAdjustment || 0)) - (b.product.basePrice + (b.priceAdjustment || 0))
-                            );
-                        } else if (sortBy === 'price-desc') {
-                            allVariants = [...allVariants].sort((a, b) =>
-                                (b.product.basePrice + (b.priceAdjustment || 0)) - (a.product.basePrice + (a.priceAdjustment || 0))
-                            );
-                        } else if (sortBy === 'name-asc') {
-                            allVariants = [...allVariants].sort((a, b) =>
-                                a.product.name.localeCompare(b.product.name)
-                            );
-                        }
+                        // Limit to top 4 "fast selling" variants
+                        const allVariants = Object.values(variantsByType).flat().slice(0, 4);
 
                         if (allVariants.length === 0) {
                             return (
                                 <div className="no-products">
-                                    <p>No products match your filters.</p>
+                                    <p>No products available.</p>
                                 </div>
                             );
                         }
@@ -300,7 +235,7 @@ function Landing() {
                         );
                     })() : products.length > 0 ? (
                         <div className="variants-grid">
-                            {products.map((product) => {
+                            {products.slice(0, 4).map((product) => {
                                 const imgUrl = getProductImage(product);
                                 return (
                                     <div key={product._id} className="variant-product-card">
@@ -323,7 +258,7 @@ function Landing() {
                         </div>
                     ) : (
                         <div className="no-products">
-                            <p>No products available yet. Check back soon!</p>
+                            <p>No products available yet.</p>
                         </div>
                     )}
                 </div>
