@@ -1,60 +1,57 @@
 import { useState, useEffect } from 'react';
 import { heroAPI } from '../api';
 
+const DEFAULTS = {
+    badgeText: '🌿 100% Eco-Friendly Shoe Care',
+    title: 'Keep Your Kicks',
+    highlightText: 'Naturally Fresh',
+    description: 'Bamboo charcoal, cedar & lavender — zero chemicals, 100% biodegradable. Reusable for months.',
+    image: '',
+    isActive: true,
+};
+
 function HeroSection() {
-    const [slides, setSlides] = useState([]);
+    const [form, setForm] = useState(DEFAULTS);
+    const [imagePreview, setImagePreview] = useState('');
     const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
-    const [editingSlide, setEditingSlide] = useState(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const emptyForm = {
-        title: '',
-        subtitle: '',
-        ctaText: 'Shop Now',
-        ctaLink: '/#products',
-        bgColor: '#f5f0eb',
-        textPosition: 'right',
-        order: 0,
-        isActive: true,
-        image: null
-    };
+    const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 
-    const [form, setForm] = useState(emptyForm);
-    const [imagePreview, setImagePreview] = useState(null);
+    useEffect(() => { fetchConfig(); }, []);
 
-    useEffect(() => {
-        fetchSlides();
-    }, []);
-
-    const fetchSlides = async () => {
+    const fetchConfig = async () => {
         try {
-            const res = await heroAPI.getAll();
-            setSlides(res.data.slides);
+            const res = await heroAPI.getConfig();
+            const cfg = res.data.config;
+            if (cfg) {
+                setForm({
+                    badgeText: cfg.badgeText || DEFAULTS.badgeText,
+                    title: cfg.title || DEFAULTS.title,
+                    highlightText: cfg.highlightText || DEFAULTS.highlightText,
+                    description: cfg.description || DEFAULTS.description,
+                    image: cfg.image || '',
+                    isActive: cfg.isActive ?? true,
+                });
+                if (cfg.image) {
+                    setImagePreview(cfg.image.startsWith('http') ? cfg.image : `${API_BASE}${cfg.image}`);
+                }
+            }
         } catch (err) {
-            setError('Failed to load hero slides');
+            setError('Failed to load hero config');
         } finally {
             setLoading(false);
         }
     };
 
-    // Handle both Cloudinary (absolute) and local /uploads URLs
-    const getImageSrc = (url) => {
-        if (!url) return '';
-        if (url.startsWith('http://') || url.startsWith('https://')) return url;
-        return `${import.meta.env.VITE_API_URL.replace('/api', '')}${url}`;
-    };
-
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setForm({ ...form, image: file });
+            setForm(f => ({ ...f, image: file }));
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
+            reader.onloadend = () => setImagePreview(reader.result);
             reader.readAsDataURL(file);
         }
     };
@@ -63,73 +60,25 @@ function HeroSection() {
         e.preventDefault();
         setSaving(true);
         setError('');
-
-        const formData = new FormData();
-        formData.append('title', form.title);
-        formData.append('subtitle', form.subtitle);
-        formData.append('ctaText', form.ctaText);
-        formData.append('ctaLink', form.ctaLink);
-        formData.append('bgColor', form.bgColor);
-        formData.append('textPosition', form.textPosition);
-        formData.append('order', form.order);
-        formData.append('isActive', form.isActive);
-        if (form.image instanceof File) {
-            formData.append('image', form.image);
-        }
-
+        const fd = new FormData();
+        fd.append('badgeText', form.badgeText);
+        fd.append('title', form.title);
+        fd.append('highlightText', form.highlightText);
+        fd.append('description', form.description);
+        fd.append('isActive', form.isActive);
+        if (form.image instanceof File) fd.append('image', form.image);
         try {
-            if (editingSlide) {
-                await heroAPI.update(editingSlide._id, formData);
-                setSuccess('Slide updated successfully');
-            } else {
-                await heroAPI.create(formData);
-                setSuccess('Slide created successfully');
-            }
-            setShowModal(false);
-            setEditingSlide(null);
-            setForm(emptyForm);
-            setImagePreview(null);
-            fetchSlides();
+            await heroAPI.save(fd);
+            setSuccess('Hero section saved!');
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to save slide');
+            setError(err.response?.data?.message || 'Failed to save');
         } finally {
             setSaving(false);
         }
     };
 
-    const handleEdit = (slide) => {
-        setEditingSlide(slide);
-        setForm({
-            title: slide.title,
-            subtitle: slide.subtitle || '',
-            ctaText: slide.ctaText || 'Shop Now',
-            ctaLink: slide.ctaLink || '/#products',
-            bgColor: slide.bgColor || '#f5f0eb',
-            textPosition: slide.textPosition || 'right',
-            order: slide.order || 0,
-            isActive: slide.isActive,
-            image: null
-        });
-        setImagePreview(slide.image ? getImageSrc(slide.image) : null);
-        setShowModal(true);
-    };
-
-    const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this slide?')) return;
-        try {
-            await heroAPI.delete(id);
-            setSuccess('Slide deleted');
-            fetchSlides();
-        } catch (err) {
-            setError('Failed to delete slide');
-        }
-    };
-
     useEffect(() => {
-        if (success) {
-            const t = setTimeout(() => setSuccess(''), 3000);
-            return () => clearTimeout(t);
-        }
+        if (success) { const t = setTimeout(() => setSuccess(''), 3000); return () => clearTimeout(t); }
     }, [success]);
 
     if (loading) return <div className="loading-page"><div className="spinner"></div></div>;
@@ -140,190 +89,189 @@ function HeroSection() {
                 <div className="page-header-row">
                     <div>
                         <h2>Hero Section</h2>
-                        <p>Manage landing page carousel slides</p>
+                        <p>Edit the landing page hero content</p>
                     </div>
-                    <button className="btn btn-primary" onClick={() => { setEditingSlide(null); setForm(emptyForm); setImagePreview(null); setShowModal(true); }}>
-                        + Add Slide
-                    </button>
                 </div>
             </div>
 
             {success && <div className="success-msg">{success}</div>}
             {error && <div className="error-msg">{error}</div>}
 
-            <div className="card">
-                <div className="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Slide</th>
-                                <th>CTA</th>
-                                <th>Order</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {slides.length === 0 ? (
-                                <tr><td colSpan="5" style={{ textAlign: 'center', padding: 40 }} className="text-muted">No slides found. Add your first hero slide!</td></tr>
-                            ) : slides.map(slide => (
-                                <tr key={slide._id}>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                            <div style={{
-                                                width: '100px',
-                                                height: '60px',
-                                                background: slide.bgColor,
-                                                borderRadius: '4px',
-                                                overflow: 'hidden',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                border: '1px solid #eee'
-                                            }}>
-                                                {slide.image && (
-                                                    <img
-                                                        src={getImageSrc(slide.image)}
-                                                        alt=""
-                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                    />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <strong>{slide.title}</strong>
-                                                <div className="text-sm text-muted">{slide.subtitle}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="text-sm">
-                                            <strong>{slide.ctaText}</strong>
-                                            <div className="text-muted">{slide.ctaLink}</div>
-                                        </div>
-                                    </td>
-                                    <td>{slide.order}</td>
-                                    <td>
-                                        <span className={`badge ${slide.isActive ? 'badge-delivered' : 'badge-cancelled'}`}>
-                                            {slide.isActive ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="flex gap-8">
-                                            <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(slide)}>Edit</button>
-                                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(slide._id)}>Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
 
-            {/* Slide Modal */}
-            {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <h3>{editingSlide ? 'Edit Slide' : 'Add Hero Slide'}</h3>
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label>Title</label>
-                                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required placeholder="e.g. Keep Your Kicks Fresh" />
-                            </div>
-                            <div className="form-group">
-                                <label>Subtitle</label>
-                                <input type="text" value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="e.g. Naturally" />
-                            </div>
+                {/* ── Editor Form ── */}
+                <div className="card">
+                    <h3 style={{ marginBottom: '24px', fontSize: '16px', fontWeight: '700' }}>Edit Content</h3>
+                    <form onSubmit={handleSubmit}>
 
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>CTA Text</label>
-                                    <input type="text" value={form.ctaText} onChange={(e) => setForm({ ...form, ctaText: e.target.value })} />
-                                </div>
-                                <div className="form-group">
-                                    <label>CTA Link</label>
-                                    <input type="text" value={form.ctaLink} onChange={(e) => setForm({ ...form, ctaLink: e.target.value })} />
-                                </div>
-                            </div>
+                        <div className="form-group">
+                            <label>Badge Text</label>
+                            <input
+                                type="text"
+                                value={form.badgeText}
+                                onChange={e => setForm(f => ({ ...f, badgeText: e.target.value }))}
+                                placeholder="🌿 100% Eco-Friendly Shoe Care"
+                            />
+                            <small className="text-muted">Small label shown above the heading</small>
+                        </div>
 
-                            <div className="form-group">
-                                <label>Text Position</label>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    {['left', 'center', 'right'].map((pos) => (
-                                        <button
-                                            key={pos}
-                                            type="button"
-                                            onClick={() => setForm({ ...form, textPosition: pos })}
-                                            style={{
-                                                flex: 1,
-                                                padding: '8px',
-                                                border: '1.5px solid',
-                                                borderColor: form.textPosition === pos ? '#1a1a1a' : '#ddd',
-                                                borderRadius: '6px',
-                                                background: form.textPosition === pos ? '#1a1a1a' : '#fff',
-                                                color: form.textPosition === pos ? '#fff' : '#555',
-                                                fontWeight: 600,
-                                                fontSize: '13px',
-                                                cursor: 'pointer',
-                                                textTransform: 'capitalize',
-                                                transition: 'all 0.15s'
-                                            }}
-                                        >
-                                            {pos === 'left' ? '⬅ Left' : pos === 'right' ? 'Right ➡' : '↔ Center'}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                        <div className="form-group">
+                            <label>Heading (plain part)</label>
+                            <input
+                                type="text"
+                                value={form.title}
+                                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                                placeholder="Keep Your Kicks"
+                                required
+                            />
+                        </div>
 
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Background Color</label>
-                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                        <input type="color" value={form.bgColor} onChange={(e) => setForm({ ...form, bgColor: e.target.value })} style={{ width: '40px', height: '40px', padding: '2px', border: '1px solid #ddd' }} />
-                                        <input type="text" value={form.bgColor} onChange={(e) => setForm({ ...form, bgColor: e.target.value })} style={{ flex: 1 }} />
+                        <div className="form-group">
+                            <label>Highlighted Text <span style={{ color: '#22c55e' }}>(green gradient)</span></label>
+                            <input
+                                type="text"
+                                value={form.highlightText}
+                                onChange={e => setForm(f => ({ ...f, highlightText: e.target.value }))}
+                                placeholder="Naturally Fresh"
+                            />
+                            <small className="text-muted">This part of the heading appears in green</small>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Description</label>
+                            <textarea
+                                rows={3}
+                                value={form.description}
+                                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                                placeholder="Bamboo charcoal, cedar & lavender..."
+                                style={{ resize: 'vertical' }}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Hero Card Image</label>
+                            <div style={{ display: 'flex', gap: '16px', alignItems: 'start' }}>
+                                {imagePreview && (
+                                    <div style={{ width: '120px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #eee', flexShrink: 0 }}>
+                                        <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     </div>
-                                </div>
-                                <div className="form-group">
-                                    <label>Display Order</label>
-                                    <input type="number" value={form.order} onChange={(e) => setForm({ ...form, order: parseInt(e.target.value) })} />
-                                </div>
-                            </div>
-
-
-                            <div className="form-group">
-                                <label>Image</label>
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'start' }}>
-                                    {imagePreview && (
-                                        <div style={{ width: '120px', height: '80px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #eee' }}>
-                                            <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        </div>
-                                    )}
-                                    <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
-                                        {imagePreview ? 'Change Image' : 'Choose Image'}
-                                        <input type="file" accept="image/*" onChange={handleFileChange} hidden />
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className="form-group">
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                    <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
-                                    Active (Shown on landing page)
+                                )}
+                                <label className="btn btn-secondary" style={{ cursor: 'pointer', alignSelf: 'center' }}>
+                                    {imagePreview ? 'Change Image' : 'Upload Image'}
+                                    <input type="file" accept="image/*" onChange={handleFileChange} hidden />
                                 </label>
                             </div>
+                            <small className="text-muted">Image displayed inside the 3D parallax card</small>
+                        </div>
 
-                            <div className="modal-actions">
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary" disabled={saving}>
-                                    {saving ? 'Saving...' : (editingSlide ? 'Update' : 'Create')}
-                                </button>
+                        <div className="form-group">
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={form.isActive}
+                                    onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
+                                />
+                                Active (Show hero section on landing page)
+                            </label>
+                        </div>
+
+                        <button type="submit" className="btn btn-primary" disabled={saving} style={{ width: '100%' }}>
+                            {saving ? 'Saving...' : '💾  Save Hero Section'}
+                        </button>
+                    </form>
+                </div>
+
+                {/* ── Live Preview ── */}
+                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div style={{ padding: '12px 20px', borderBottom: '1px solid #eee', fontSize: '13px', fontWeight: '600', color: '#555' }}>
+                        Live Preview
+                    </div>
+                    <div style={{
+                        background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0d1f0d 100%)',
+                        padding: '40px 32px',
+                        minHeight: '360px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textAlign: 'center',
+                        gap: '16px',
+                    }}>
+                        {/* Badge */}
+                        <p style={{
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            letterSpacing: '2px',
+                            textTransform: 'uppercase',
+                            color: '#6ee77a',
+                        }}>
+                            {form.badgeText || '🌿 Badge text'}
+                        </p>
+
+                        {/* Heading */}
+                        <h2 style={{
+                            fontSize: 'clamp(1.4rem, 3vw, 2.2rem)',
+                            fontWeight: '800',
+                            lineHeight: '1.2',
+                            color: '#ffffff',
+                            margin: 0,
+                        }}>
+                            {form.title || 'Heading'}{' '}
+                            <span style={{
+                                background: 'linear-gradient(135deg, #6ee77a, #22c55e)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text',
+                            }}>
+                                {form.highlightText || 'Highlight'}
+                            </span>
+                        </h2>
+
+                        {/* Description */}
+                        <p style={{ color: '#9ca3af', fontSize: '13px', maxWidth: '340px', lineHeight: '1.7', margin: 0 }}>
+                            {form.description || 'Description text...'}
+                        </p>
+
+                        {/* Buttons preview */}
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '4px' }}>
+                            <span style={{
+                                padding: '10px 24px',
+                                background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                                color: '#fff',
+                                borderRadius: '50px',
+                                fontWeight: '700',
+                                fontSize: '13px',
+                            }}>Shop Now →</span>
+                            <span style={{
+                                padding: '10px 24px',
+                                background: 'transparent',
+                                color: '#fff',
+                                borderRadius: '50px',
+                                fontWeight: '600',
+                                fontSize: '13px',
+                                border: '2px solid rgba(255,255,255,0.2)',
+                            }}>View Collection</span>
+                        </div>
+
+                        {/* Image preview card */}
+                        {imagePreview && (
+                            <div style={{
+                                marginTop: '12px',
+                                width: '100%',
+                                maxWidth: '320px',
+                                height: '160px',
+                                borderRadius: '12px',
+                                overflow: 'hidden',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                            }}>
+                                <img src={imagePreview} alt="Hero" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
-                        </form>
-                    </div >
-                </div >
-            )
-            }
-        </div >
+                        )}
+                    </div>
+                </div>
+
+            </div>
+        </div>
     );
 }
 

@@ -1,23 +1,26 @@
 import mongoose from 'mongoose';
 
 const heroSlideSchema = new mongoose.Schema({
+    badgeText: {
+        type: String,
+        default: '🌿 100% Eco-Friendly Shoe Care',
+        trim: true
+    },
     title: {
         type: String,
         required: [true, 'Title is required'],
-        trim: true
+        trim: true,
+        default: 'Keep Your Kicks'
     },
-    subtitle: {
+    highlightText: {
         type: String,
         trim: true,
-        default: ''
+        default: 'Naturally Fresh'
     },
-    ctaText: {
+    description: {
         type: String,
-        default: 'Shop Now'
-    },
-    ctaLink: {
-        type: String,
-        default: '/products'
+        trim: true,
+        default: 'Bamboo charcoal, cedar & lavender — zero chemicals, 100% biodegradable. Reusable for months.'
     },
     image: {
         type: String,
@@ -27,19 +30,6 @@ const heroSlideSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    bgColor: {
-        type: String,
-        default: '#f5f0eb'
-    },
-    textPosition: {
-        type: String,
-        enum: ['left', 'right', 'center'],
-        default: 'right'
-    },
-    order: {
-        type: Number,
-        default: 0
-    },
     isActive: {
         type: Boolean,
         default: true
@@ -47,8 +37,6 @@ const heroSlideSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-
-heroSlideSchema.index({ isActive: 1, order: 1 });
 
 const HeroSlide = mongoose.model('HeroSlide', heroSlideSchema);
 

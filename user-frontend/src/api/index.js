@@ -80,7 +80,7 @@ export const reviewAPI = {
 
 // Hero APIs
 export const heroAPI = {
-    getSlides: () => api.get('hero')
+    getConfig: () => api.get('hero')
 };
 
 export default api;

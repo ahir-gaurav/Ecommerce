@@ -1,13 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { productAPI } from '../../api';
+import { productAPI, heroAPI } from '../../api';
 import { ContainerScroll } from '../../components/ui/container-scroll-animation';
 import './Landing.css';
+
+const HERO_DEFAULTS = {
+    badgeText: '🌿 100% Eco-Friendly Shoe Care',
+    title: 'Keep Your Kicks',
+    highlightText: 'Naturally Fresh',
+    description: 'Bamboo charcoal, cedar & lavender — zero chemicals, 100% biodegradable. Reusable for months.',
+    image: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=1400&q=80',
+};
 
 function Landing() {
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [hero, setHero] = useState(HERO_DEFAULTS);
 
     // Filter / Sort state
     const [activeType, setActiveType] = useState('All');
@@ -20,9 +29,28 @@ function Landing() {
 
     const fetchInitialData = async () => {
         try {
-            const productRes = await productAPI.getAll();
-            const fetchedProducts = productRes.data.products || productRes.data || [];
-            setProducts(fetchedProducts);
+            const [productRes, heroRes] = await Promise.allSettled([
+                productAPI.getAll(),
+                heroAPI.getConfig()
+            ]);
+
+            if (productRes.status === 'fulfilled') {
+                const fetchedProducts = productRes.value.data.products || productRes.value.data || [];
+                setProducts(fetchedProducts);
+            }
+
+            if (heroRes.status === 'fulfilled') {
+                const cfg = heroRes.value.data.config;
+                if (cfg) {
+                    setHero({
+                        badgeText: cfg.badgeText || HERO_DEFAULTS.badgeText,
+                        title: cfg.title || HERO_DEFAULTS.title,
+                        highlightText: cfg.highlightText || HERO_DEFAULTS.highlightText,
+                        description: cfg.description || HERO_DEFAULTS.description,
+                        image: cfg.image || HERO_DEFAULTS.image,
+                    });
+                }
+            }
         } catch (error) {
             console.error('Failed to fetch landing data:', error);
         } finally {
@@ -60,11 +88,13 @@ function Landing() {
     const getProductImage = (product) => {
         if (!product.images || product.images.length === 0) return null;
         const primary = product.images.find(img => img.isPrimary) || product.images[0];
-        // Cloudinary URLs are absolute; local URLs are relative
         if (primary.url.startsWith('http')) return primary.url;
         return `${API_URL}${primary.url}`;
     };
 
+    const heroImageSrc = hero.image
+        ? (hero.image.startsWith('http') ? hero.image : `${API_URL}${hero.image}`)
+        : HERO_DEFAULTS.image;
 
     return (
         <div className="landing">
@@ -82,7 +112,7 @@ function Landing() {
                                 marginBottom: '16px',
                                 display: 'block',
                             }}>
-                                🌿 100% Eco-Friendly Shoe Care
+                                {hero.badgeText}
                             </p>
                             <h1 style={{
                                 fontSize: 'clamp(2rem, 6vw, 5rem)',
@@ -92,14 +122,14 @@ function Landing() {
                                 marginBottom: '24px',
                                 letterSpacing: '-1px',
                             }}>
-                                Keep Your Kicks{' '}
+                                {hero.title}{' '}
                                 <span style={{
                                     background: 'linear-gradient(135deg, #6ee77a, #22c55e)',
                                     WebkitBackgroundClip: 'text',
                                     WebkitTextFillColor: 'transparent',
                                     backgroundClip: 'text',
                                 }}>
-                                    Naturally Fresh
+                                    {hero.highlightText}
                                 </span>
                             </h1>
                             <p style={{
@@ -110,7 +140,7 @@ function Landing() {
                                 margin: '0 auto 32px',
                                 lineHeight: '1.7',
                             }}>
-                                Bamboo charcoal, cedar & lavender — zero chemicals, 100% biodegradable. Reusable for months.
+                                {hero.description}
                             </p>
                             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
                                 <button
@@ -161,7 +191,7 @@ function Landing() {
                 >
                     {/* Hero image inside the 3D card */}
                     <img
-                        src="https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=1400&q=80"
+                        src={heroImageSrc}
                         alt="Premium eco-friendly shoe care products"
                         style={{
                             width: '100%',

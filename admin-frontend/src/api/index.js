@@ -69,10 +69,9 @@ export const productAPI = {
 
 // Hero Section APIs
 export const heroAPI = {
-    getAll: () => api.get('hero/all'),
-    create: (formData) => api.post('hero', formData),
-    update: (id, formData) => api.put(`hero/${id}`, formData),
-    delete: (id) => api.delete(`hero/${id}`)
+    getConfig: () => api.get('hero/all'),
+    save: (formData) => api.post('hero', formData),
+    removeImage: () => api.delete('hero/image')
 };
 
 // Order APIs
