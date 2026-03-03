@@ -45,7 +45,7 @@ router.get('/all', verifyToken, requireAdmin, async (req, res) => {
     }
 });
 
-// CREATE or UPDATE hero config (admin)
+// CREATE or UPDATE hero config (admin) - always keeps exactly ONE hero document
 router.post('/', verifyToken, requireAdmin, (req, res) => {
     uploadHero(req, res, async (err) => {
         if (err) {
@@ -55,25 +55,32 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
         try {
             const { badgeText, title, highlightText, description, isActive } = req.body;
 
-            // Build the update object
+            // If a new image was uploaded, delete ALL old images from Cloudinary first
+            if (req.file) {
+                const allExisting = await HeroSlide.find({});
+                for (const doc of allExisting) {
+                    if (doc.imagePublicId) {
+                        try { await cloudinary.uploader.destroy(doc.imagePublicId); } catch (e) { /* ok */ }
+                    }
+                }
+                // Delete ALL old slide documents — we'll create one fresh one below
+                await HeroSlide.deleteMany({});
+            }
+
+            // Build the update / insert object
             const updateData = {};
             if (badgeText !== undefined) updateData.badgeText = badgeText;
             if (title !== undefined) updateData.title = title;
             if (highlightText !== undefined) updateData.highlightText = highlightText;
             if (description !== undefined) updateData.description = description;
-            if (isActive !== undefined) updateData.isActive = isActive === 'true' || isActive === true;
+            updateData.isActive = isActive === 'true' || isActive === true || isActive === undefined ? true : false;
 
-            // If a new image was uploaded, first delete the old one from Cloudinary
             if (req.file) {
-                const existing = await HeroSlide.findOne().sort({ updatedAt: -1 });
-                if (existing?.imagePublicId) {
-                    try { await cloudinary.uploader.destroy(existing.imagePublicId); } catch (e) { /* ok */ }
-                }
-                updateData.image = req.file.path;           // Cloudinary HTTPS URL
+                updateData.image = req.file.path;            // Cloudinary HTTPS URL
                 updateData.imagePublicId = req.file.filename; // Cloudinary public_id
             }
 
-            // findOneAndUpdate with upsert — always returns the updated document
+            // findOneAndUpdate with upsert — match any remaining document, or create one
             const config = await HeroSlide.findOneAndUpdate(
                 {},                          // match any (there's only one config)
                 { $set: updateData },
