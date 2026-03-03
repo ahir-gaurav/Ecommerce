@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { productAPI } from '../../api';
 import { useCart } from '../../context/CartContext';
@@ -13,6 +13,7 @@ function Product() {
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState(null);
     const { addToCart } = useCart();
+    const navigate = useNavigate();
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -39,7 +40,7 @@ function Product() {
     const handleAddToCart = () => {
         if (product && selectedVariant) {
             addToCart(product, selectedVariant, quantity);
-            alert('Added to cart!');
+            navigate('/cart');
         }
     };
 
