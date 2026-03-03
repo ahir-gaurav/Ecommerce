@@ -5,15 +5,31 @@ import { uploadHero, cloudinary } from '../middleware/upload.js';
 
 const router = express.Router();
 
-// GET hero settings (public) - returns single config object
+// GET hero settings (public) - returns single config object + slides array for compatibility
 router.get('/', async (req, res) => {
     try {
-        // Find the single active hero config, or the most recent one
-        let config = await HeroSlide.findOne({ isActive: true }).sort({ updatedAt: -1 });
-        if (!config) {
-            config = await HeroSlide.findOne().sort({ updatedAt: -1 });
-        }
-        res.json({ success: true, config });
+        // Get all active slides sorted by most recent first
+        const slides = await HeroSlide.find({ isActive: true }).sort({ updatedAt: -1 });
+        const allSlides = await HeroSlide.find().sort({ updatedAt: -1 });
+
+        // Pick the best slide — most recently updated with an image
+        const best = slides.find(s => s.image) || allSlides[0] || null;
+
+        // Always synthesize a `config` object from the best slide so the frontend
+        // can read either `.config` or `.slides[n]`
+        const config = best ? {
+            _id: best._id,
+            badgeText: best.badgeText || '🌿 100% Eco-Friendly Shoe Care',
+            title: best.title || 'Keep Your Kicks',
+            highlightText: best.highlightText || 'Naturally Fresh',
+            description: best.description || best.subtitle || '',
+            image: best.image || '',
+            imagePublicId: best.imagePublicId || '',
+            isActive: best.isActive,
+            updatedAt: best.updatedAt,
+        } : null;
+
+        res.json({ success: true, config, slides: allSlides });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Failed to fetch hero config' });
     }

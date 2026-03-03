@@ -40,16 +40,48 @@ function Landing() {
             }
 
             if (heroRes.status === 'fulfilled') {
-                const cfg = heroRes.value.data.config;
-                console.log('🎯 Hero Config:', cfg); // Debugging
-                if (cfg) {
+                const data = heroRes.value.data;
+                console.log('🎯 Hero API response:', data);
+
+                // Handle both API shapes:
+                // New: { success, config: { badgeText, title, highlightText, description, image } }
+                // Old: { success, slides: [{ title, subtitle, image, isActive, ... }] }
+                const cfg = data.config;
+                const slides = data.slides;
+
+                if (cfg && cfg.image) {
+                    // New schema — use config directly
                     setHero({
                         badgeText: cfg.badgeText || HERO_DEFAULTS.badgeText,
                         title: cfg.title || HERO_DEFAULTS.title,
                         highlightText: cfg.highlightText || HERO_DEFAULTS.highlightText,
                         description: cfg.description || HERO_DEFAULTS.description,
-                        image: cfg.image || HERO_DEFAULTS.image,
-                        _updated: cfg.updatedAt || Date.now(), // Force refresh
+                        image: cfg.image,
+                        _updated: cfg.updatedAt || Date.now(),
+                    });
+                } else if (slides && slides.length > 0) {
+                    // Old schema — pick the most recent active slide that has an image
+                    const activeSlides = slides
+                        .filter(s => s.isActive && s.image)
+                        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                    const slide = activeSlides[0] || slides[slides.length - 1];
+                    if (slide && slide.image) {
+                        setHero(prev => ({
+                            ...prev,
+                            image: slide.image,
+                            title: slide.title || prev.title,
+                            _updated: slide.updatedAt || Date.now(),
+                        }));
+                    }
+                } else if (cfg) {
+                    // New schema but no image uploaded yet — use text fields with default image
+                    setHero({
+                        badgeText: cfg.badgeText || HERO_DEFAULTS.badgeText,
+                        title: cfg.title || HERO_DEFAULTS.title,
+                        highlightText: cfg.highlightText || HERO_DEFAULTS.highlightText,
+                        description: cfg.description || HERO_DEFAULTS.description,
+                        image: HERO_DEFAULTS.image,
+                        _updated: Date.now(),
                     });
                 }
             }
