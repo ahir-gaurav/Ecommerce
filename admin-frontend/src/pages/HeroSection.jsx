@@ -160,6 +160,7 @@ function HeroSection() {
         fd.append('bg', slide.bg);
         fd.append('badgeText', slide.badgeText);
         fd.append('headline', slide.headline);
+        fd.append('title', slide.headline); // Super-senior fix: Send title to satisfy legacy backend validation
         fd.append('cta', slide.cta);
         fd.append('isActive', slide.isActive);
         if (files[activeTab]) fd.append('image', files[activeTab]);

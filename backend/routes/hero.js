@@ -67,7 +67,7 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
         }
 
         try {
-            const { slideIndex: rawIndex, bg, badgeText, headline, cta, isActive } = req.body;
+            const { slideIndex: rawIndex, bg, badgeText, headline, title, cta, isActive } = req.body;
             const slideIndex = parseInt(rawIndex, 10);
 
             if (isNaN(slideIndex) || slideIndex < 0 || slideIndex > 2) {
@@ -77,7 +77,10 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
             const updateData = { slideIndex };
             if (bg !== undefined) updateData.bg = bg;
             if (badgeText !== undefined) updateData.badgeText = badgeText;
-            if (headline !== undefined) updateData.headline = headline;
+            if (headline !== undefined) {
+                updateData.headline = headline;
+                updateData.title = title || headline; // Explicitly sync for legacy compatibility
+            }
             if (cta !== undefined) updateData.cta = cta;
             updateData.isActive = !(isActive === 'false' || isActive === false);
 
