@@ -1,41 +1,47 @@
 import mongoose from 'mongoose';
 
 const heroSlideSchema = new mongoose.Schema({
+    slideIndex: {
+        type: Number,
+        required: true,
+        min: 0,
+        max: 2,
+        unique: true,  // one document per slide
+    },
+    bg: {
+        type: String,
+        default: '#D6F2FF',
+        trim: true,
+    },
     badgeText: {
         type: String,
-        default: '🌿 100% Eco-Friendly Shoe Care',
-        trim: true
-    },
-    title: {
-        type: String,
-        required: [true, 'Title is required'],
+        default: 'SPF 50 | PA++++',
         trim: true,
-        default: 'Keep Your Kicks'
     },
-    highlightText: {
+    headline: {
         type: String,
+        default: 'Shield Your Skin\nThis Summer',
         trim: true,
-        default: 'Naturally Fresh'
     },
-    description: {
+    cta: {
         type: String,
+        default: 'Shop Now →',
         trim: true,
-        default: 'Bamboo charcoal, cedar & lavender — zero chemicals, 100% biodegradable. Reusable for months.'
     },
     image: {
         type: String,
-        default: ''
+        default: '',
     },
     imagePublicId: {
         type: String,
-        default: ''
+        default: '',
     },
     isActive: {
         type: Boolean,
-        default: true
-    }
+        default: true,
+    },
 }, {
-    timestamps: true
+    timestamps: true,
 });
 
 const HeroSlide = mongoose.model('HeroSlide', heroSlideSchema);

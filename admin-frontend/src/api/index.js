@@ -69,9 +69,9 @@ export const productAPI = {
 
 // Hero Section APIs
 export const heroAPI = {
-    getConfig: () => api.get('hero/all'),
-    save: (formData) => api.post('hero', formData),
-    removeImage: () => api.delete('hero/image')
+    getAll: () => api.get('hero/all'),
+    saveSlide: (index, fd) => api.post(`hero/${index}`, fd),
+    removeImage: (index) => api.delete(`hero/${index}/image`),
 };
 
 // Order APIs

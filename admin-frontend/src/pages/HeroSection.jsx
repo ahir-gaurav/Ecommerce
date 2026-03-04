@@ -1,18 +1,73 @@
 import { useState, useEffect } from 'react';
 import { heroAPI } from '../api';
 
-const DEFAULTS = {
-    badgeText: '🌿 100% Eco-Friendly Shoe Care',
-    title: 'Keep Your Kicks',
-    highlightText: 'Naturally Fresh',
-    description: 'Bamboo charcoal, cedar & lavender — zero chemicals, 100% biodegradable. Reusable for months.',
-    image: '',
-    isActive: true,
-};
+/* ── Per-slide defaults (mirrors HeroSlider.jsx) ─────────── */
+const SLIDE_DEFAULTS = [
+    { bg: '#D6F2FF', badgeText: 'SPF 50 | PA++++', headline: 'Shield Your Skin\nThis Summer', cta: 'Shop Now →', image: '', isActive: true },
+    { bg: '#FFF3EC', badgeText: 'FREE Kit on orders above ₹599', headline: 'Your Routine,\nAnywhere', cta: 'Shop Now →', image: '', isActive: true },
+    { bg: '#F5F5F0', badgeText: 'FREE Face Towel on orders above ₹899', headline: 'Cleanse.\nTreat. Glow.', cta: 'Shop Now →', image: '', isActive: true },
+];
 
+const LABELS = ['Slide 1 · Sun Protection', 'Slide 2 · Travel Kit', 'Slide 3 · Free Gift'];
+
+/* ── Small live preview ──────────────────────────────────── */
+function SlidePreview({ slide, preview }) {
+    return (
+        <div style={{
+            display: 'flex',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            height: '220px',
+            background: slide.bg || '#f0f0f0',
+            border: '1px solid #e5e5e5',
+        }}>
+            {/* Image side */}
+            <div style={{ flex: '0 0 55%', overflow: 'hidden', background: '#e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {preview ? (
+                    <img src={preview} alt="Hero" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                    <span style={{ color: '#aaa', fontSize: '13px' }}>No image</span>
+                )}
+            </div>
+            {/* Content side */}
+            <div style={{ flex: '0 0 45%', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '10px', justifyContent: 'center' }}>
+                <span style={{
+                    display: 'inline-block', width: 'fit-content',
+                    background: '#1a1a1a', color: '#fff',
+                    fontSize: '9px', fontWeight: 700,
+                    letterSpacing: '0.8px', textTransform: 'uppercase',
+                    padding: '4px 10px', borderRadius: '50px',
+                }}>
+                    {slide.badgeText || 'Badge text'}
+                </span>
+                <p style={{
+                    fontFamily: 'Georgia, serif',
+                    fontSize: '15px', fontWeight: 700,
+                    lineHeight: 1.2, color: '#1a1a1a', margin: 0,
+                    whiteSpace: 'pre-line',
+                }}>
+                    {slide.headline || 'Headline'}
+                </p>
+                <span style={{
+                    display: 'inline-block', width: 'fit-content',
+                    background: '#1a1a1a', color: '#fff',
+                    fontSize: '10px', fontWeight: 600,
+                    letterSpacing: '1px', textTransform: 'uppercase',
+                    padding: '6px 14px', borderRadius: '50px',
+                }}>
+                    {slide.cta || 'Shop Now →'}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+/* ── Main component ──────────────────────────────────────── */
 function HeroSection() {
-    const [form, setForm] = useState(DEFAULTS);
-    const [imagePreview, setImagePreview] = useState('');
+    const [slides, setSlides] = useState(SLIDE_DEFAULTS.map(d => ({ ...d })));
+    const [previews, setPreviews] = useState(['', '', '']);
+    const [files, setFiles] = useState([null, null, null]);
+    const [activeTab, setActiveTab] = useState(0);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -20,77 +75,120 @@ function HeroSection() {
 
     const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 
-    useEffect(() => { fetchConfig(); }, []);
-
-    const fetchConfig = async () => {
-        try {
-            const res = await heroAPI.getConfig();
-            const cfg = res.data.config;
-            if (cfg) {
-                setForm({
-                    badgeText: cfg.badgeText || DEFAULTS.badgeText,
-                    title: cfg.title || DEFAULTS.title,
-                    highlightText: cfg.highlightText || DEFAULTS.highlightText,
-                    description: cfg.description || DEFAULTS.description,
-                    image: cfg.image || '',
-                    isActive: cfg.isActive ?? true,
-                });
-                if (cfg.image) {
-                    setImagePreview(cfg.image.startsWith('http') ? cfg.image : `${API_BASE}${cfg.image}`);
-                }
-            }
-        } catch (err) {
-            setError('Failed to load hero config');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setForm(f => ({ ...f, image: file }));
-            const reader = new FileReader();
-            reader.onloadend = () => setImagePreview(reader.result);
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setSaving(true);
-        setError('');
-        const fd = new FormData();
-        fd.append('badgeText', form.badgeText);
-        fd.append('title', form.title);
-        fd.append('highlightText', form.highlightText);
-        fd.append('description', form.description);
-        fd.append('isActive', form.isActive);
-        if (form.image instanceof File) fd.append('image', form.image);
-        try {
-            const res = await heroAPI.save(fd);
-            const savedConfig = res.data.config;
-            // Update imagePreview with the real Cloudinary URL returned by the server
-            if (savedConfig?.image) {
-                const imgUrl = savedConfig.image.startsWith('http')
-                    ? savedConfig.image
-                    : `${API_BASE}${savedConfig.image}`;
-                setImagePreview(imgUrl);
-                setForm(f => ({ ...f, image: savedConfig.image }));
-            }
-            setSuccess('Hero section saved!');
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to save');
-        } finally {
-            setSaving(false);
-        }
-    };
+    useEffect(() => { fetchSlides(); }, []);
 
     useEffect(() => {
         if (success) { const t = setTimeout(() => setSuccess(''), 3000); return () => clearTimeout(t); }
     }, [success]);
 
-    if (loading) return <div className="loading-page"><div className="spinner"></div></div>;
+    /* ── Fetch ─────────────────────────────────────────────── */
+    const fetchSlides = async () => {
+        try {
+            const res = await heroAPI.getAll();
+            const apiSlides = res.data.slides || [];
+            setSlides(SLIDE_DEFAULTS.map((def, i) => {
+                const s = apiSlides[i] || {};
+                return {
+                    bg: s.bg || def.bg,
+                    badgeText: s.badgeText || def.badgeText,
+                    headline: s.headline || def.headline,
+                    cta: s.cta || def.cta,
+                    image: s.image || '',
+                    isActive: s.isActive ?? def.isActive,
+                    _id: s._id,
+                };
+            }));
+            setPreviews(apiSlides.map(s =>
+                s?.image ? (s.image.startsWith('http') ? s.image : `${API_BASE}${s.image}`) : ''
+            ).concat(['', '', '']).slice(0, 3));
+        } catch {
+            setError('Failed to load hero slides');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /* ── Field change ──────────────────────────────────────── */
+    const handleChange = (field, value) => {
+        setSlides(prev => prev.map((s, i) => i === activeTab ? { ...s, [field]: value } : s));
+    };
+
+    /* ── Image pick ────────────────────────────────────────── */
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const newFiles = [...files];
+        newFiles[activeTab] = file;
+        setFiles(newFiles);
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const p = [...previews];
+            p[activeTab] = reader.result;
+            setPreviews(p);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    /* ── Remove image ──────────────────────────────────────── */
+    const handleRemoveImage = async () => {
+        if (!slides[activeTab]._id) {
+            // Not yet saved — just clear locally
+            const p = [...previews]; p[activeTab] = ''; setPreviews(p);
+            const f = [...files]; f[activeTab] = null; setFiles(f);
+            handleChange('image', '');
+            return;
+        }
+        try {
+            await heroAPI.removeImage(activeTab);
+            const p = [...previews]; p[activeTab] = ''; setPreviews(p);
+            const f = [...files]; f[activeTab] = null; setFiles(f);
+            handleChange('image', '');
+            setSuccess('Image removed');
+        } catch {
+            setError('Failed to remove image');
+        }
+    };
+
+    /* ── Save current slide ────────────────────────────────── */
+    const handleSave = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setError('');
+        const slide = slides[activeTab];
+        const fd = new FormData();
+        fd.append('bg', slide.bg);
+        fd.append('badgeText', slide.badgeText);
+        fd.append('headline', slide.headline);
+        fd.append('cta', slide.cta);
+        fd.append('isActive', slide.isActive);
+        if (files[activeTab]) fd.append('image', files[activeTab]);
+
+        try {
+            const res = await heroAPI.saveSlide(activeTab, fd);
+            const saved = res.data.slide;
+            // Update _id + image url from server
+            setSlides(prev => prev.map((s, i) =>
+                i === activeTab ? { ...s, _id: saved._id, image: saved.image } : s
+            ));
+            if (saved.image) {
+                const p = [...previews];
+                p[activeTab] = saved.image.startsWith('http') ? saved.image : `${API_BASE}${saved.image}`;
+                setPreviews(p);
+            }
+            const f = [...files]; f[activeTab] = null; setFiles(f);
+            setSuccess(`Slide ${activeTab + 1} saved!`);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to save slide');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) return <div className="loading-page"><div className="spinner" /></div>;
+
+    const slide = slides[activeTab];
+    const preview = previews[activeTab];
 
     return (
         <div>
@@ -98,7 +196,7 @@ function HeroSection() {
                 <div className="page-header-row">
                     <div>
                         <h2>Hero Section</h2>
-                        <p>Edit the landing page hero content</p>
+                        <p>Edit the 3 hero slides shown on the landing page</p>
                     </div>
                 </div>
             </div>
@@ -106,176 +204,135 @@ function HeroSection() {
             {success && <div className="success-msg">{success}</div>}
             {error && <div className="error-msg">{error}</div>}
 
+            {/* ── Slide Tabs ─────────────────────────────── */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                {LABELS.map((label, i) => (
+                    <button
+                        key={i}
+                        onClick={() => setActiveTab(i)}
+                        className={activeTab === i ? 'btn btn-primary' : 'btn btn-secondary'}
+                        style={{ fontSize: '13px', padding: '8px 18px' }}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
 
-                {/* ── Editor Form ── */}
+                {/* ── Editor form ─────────────────────────── */}
                 <div className="card">
-                    <h3 style={{ marginBottom: '24px', fontSize: '16px', fontWeight: '700' }}>Edit Content</h3>
-                    <form onSubmit={handleSubmit}>
+                    <h3 style={{ marginBottom: '20px', fontSize: '15px', fontWeight: 700 }}>
+                        Editing: {LABELS[activeTab]}
+                    </h3>
+                    <form onSubmit={handleSave}>
 
+                        {/* BG colour */}
                         <div className="form-group">
-                            <label>Badge Text</label>
-                            <input
-                                type="text"
-                                value={form.badgeText}
-                                onChange={e => setForm(f => ({ ...f, badgeText: e.target.value }))}
-                                placeholder="🌿 100% Eco-Friendly Shoe Care"
-                            />
-                            <small className="text-muted">Small label shown above the heading</small>
+                            <label>Background Colour</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <input
+                                    type="color"
+                                    value={slide.bg}
+                                    onChange={e => handleChange('bg', e.target.value)}
+                                    style={{ width: '48px', height: '36px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', padding: '2px' }}
+                                />
+                                <input
+                                    type="text"
+                                    value={slide.bg}
+                                    onChange={e => handleChange('bg', e.target.value)}
+                                    placeholder="#D6F2FF"
+                                    style={{ flex: 1 }}
+                                />
+                            </div>
                         </div>
 
+                        {/* Badge */}
                         <div className="form-group">
-                            <label>Heading (plain part)</label>
+                            <label>Badge Chip Text</label>
                             <input
                                 type="text"
-                                value={form.title}
-                                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                                placeholder="Keep Your Kicks"
-                                required
+                                value={slide.badgeText}
+                                onChange={e => handleChange('badgeText', e.target.value)}
+                                placeholder="SPF 50 | PA++++"
                             />
+                            <small className="text-muted">Shown in the black pill chip above the headline</small>
                         </div>
 
+                        {/* Headline */}
                         <div className="form-group">
-                            <label>Highlighted Text <span style={{ color: '#22c55e' }}>(green gradient)</span></label>
-                            <input
-                                type="text"
-                                value={form.highlightText}
-                                onChange={e => setForm(f => ({ ...f, highlightText: e.target.value }))}
-                                placeholder="Naturally Fresh"
-                            />
-                            <small className="text-muted">This part of the heading appears in green</small>
-                        </div>
-
-                        <div className="form-group">
-                            <label>Description</label>
+                            <label>Headline</label>
                             <textarea
                                 rows={3}
-                                value={form.description}
-                                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                                placeholder="Bamboo charcoal, cedar & lavender..."
-                                style={{ resize: 'vertical' }}
+                                value={slide.headline}
+                                onChange={e => handleChange('headline', e.target.value)}
+                                placeholder={'Shield Your Skin\nThis Summer'}
+                                style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                            />
+                            <small className="text-muted">Use a new line to break the headline into two lines</small>
+                        </div>
+
+                        {/* CTA */}
+                        <div className="form-group">
+                            <label>CTA Button Text</label>
+                            <input
+                                type="text"
+                                value={slide.cta}
+                                onChange={e => handleChange('cta', e.target.value)}
+                                placeholder="Shop Now →"
                             />
                         </div>
 
+                        {/* Image */}
                         <div className="form-group">
-                            <label>Hero Card Image</label>
-                            <div style={{ display: 'flex', gap: '16px', alignItems: 'start' }}>
-                                {imagePreview && (
-                                    <div style={{ width: '120px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #eee', flexShrink: 0 }}>
-                                        <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <label>Slide Image</label>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                {preview && (
+                                    <div style={{ width: '90px', height: '60px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #eee', flexShrink: 0 }}>
+                                        <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     </div>
                                 )}
-                                <label className="btn btn-secondary" style={{ cursor: 'pointer', alignSelf: 'center' }}>
-                                    {imagePreview ? 'Change Image' : 'Upload Image'}
+                                <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                                    {preview ? 'Change Image' : 'Upload Image'}
                                     <input type="file" accept="image/*" onChange={handleFileChange} hidden />
                                 </label>
+                                {preview && (
+                                    <button type="button" className="btn btn-secondary" style={{ color: '#e53e3e' }} onClick={handleRemoveImage}>
+                                        Remove
+                                    </button>
+                                )}
                             </div>
-                            <small className="text-muted">Image displayed inside the 3D parallax card</small>
+                            <small className="text-muted">Displayed in the left 60% of the slide</small>
                         </div>
 
+                        {/* Active toggle */}
                         <div className="form-group">
                             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                                 <input
                                     type="checkbox"
-                                    checked={form.isActive}
-                                    onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
+                                    checked={slide.isActive}
+                                    onChange={e => handleChange('isActive', e.target.checked)}
                                 />
-                                Active (Show hero section on landing page)
+                                Active (show this slide in the hero)
                             </label>
                         </div>
 
                         <button type="submit" className="btn btn-primary" disabled={saving} style={{ width: '100%' }}>
-                            {saving ? 'Saving...' : '💾  Save Hero Section'}
+                            {saving ? 'Saving...' : `💾  Save ${LABELS[activeTab]}`}
                         </button>
                     </form>
                 </div>
 
-                {/* ── Live Preview ── */}
+                {/* ── Live preview ────────────────────────── */}
                 <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <div style={{ padding: '12px 20px', borderBottom: '1px solid #eee', fontSize: '13px', fontWeight: '600', color: '#555' }}>
-                        Live Preview
+                    <div style={{ padding: '10px 16px', borderBottom: '1px solid #eee', fontSize: '13px', fontWeight: 600, color: '#555' }}>
+                        Live Preview — {LABELS[activeTab]}
                     </div>
-                    <div style={{
-                        background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0d1f0d 100%)',
-                        padding: '40px 32px',
-                        minHeight: '360px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        textAlign: 'center',
-                        gap: '16px',
-                    }}>
-                        {/* Badge */}
-                        <p style={{
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            letterSpacing: '2px',
-                            textTransform: 'uppercase',
-                            color: '#6ee77a',
-                        }}>
-                            {form.badgeText || '🌿 Badge text'}
+                    <div style={{ padding: '20px' }}>
+                        <SlidePreview slide={slide} preview={preview} />
+                        <p style={{ marginTop: '12px', fontSize: '12px', color: '#888', textAlign: 'center' }}>
+                            This approximates how the slide will look. Actual fonts and sizes may differ slightly.
                         </p>
-
-                        {/* Heading */}
-                        <h2 style={{
-                            fontSize: 'clamp(1.4rem, 3vw, 2.2rem)',
-                            fontWeight: '800',
-                            lineHeight: '1.2',
-                            color: '#ffffff',
-                            margin: 0,
-                        }}>
-                            {form.title || 'Heading'}{' '}
-                            <span style={{
-                                background: 'linear-gradient(135deg, #6ee77a, #22c55e)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                backgroundClip: 'text',
-                            }}>
-                                {form.highlightText || 'Highlight'}
-                            </span>
-                        </h2>
-
-                        {/* Description */}
-                        <p style={{ color: '#9ca3af', fontSize: '13px', maxWidth: '340px', lineHeight: '1.7', margin: 0 }}>
-                            {form.description || 'Description text...'}
-                        </p>
-
-                        {/* Buttons preview */}
-                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '4px' }}>
-                            <span style={{
-                                padding: '10px 24px',
-                                background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                                color: '#fff',
-                                borderRadius: '50px',
-                                fontWeight: '700',
-                                fontSize: '13px',
-                            }}>Shop Now →</span>
-                            <span style={{
-                                padding: '10px 24px',
-                                background: 'transparent',
-                                color: '#fff',
-                                borderRadius: '50px',
-                                fontWeight: '600',
-                                fontSize: '13px',
-                                border: '2px solid rgba(255,255,255,0.2)',
-                            }}>View Collection</span>
-                        </div>
-
-                        {/* Image preview card */}
-                        {imagePreview && (
-                            <div style={{
-                                marginTop: '12px',
-                                width: '100%',
-                                maxWidth: '320px',
-                                height: '160px',
-                                borderRadius: '12px',
-                                overflow: 'hidden',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                            }}>
-                                <img src={imagePreview} alt="Hero" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            </div>
-                        )}
                     </div>
                 </div>
 

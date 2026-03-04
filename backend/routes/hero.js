@@ -5,110 +5,125 @@ import { uploadHero, cloudinary } from '../middleware/upload.js';
 
 const router = express.Router();
 
-// GET hero settings (public) - returns single config object + slides array for compatibility
+/* ── Default slide templates (used as fallback for missing slides) ── */
+const DEFAULTS = [
+    { slideIndex: 0, bg: '#D6F2FF', badgeText: 'SPF 50 | PA++++', headline: 'Shield Your Skin\nThis Summer', cta: 'Shop Now →' },
+    { slideIndex: 1, bg: '#FFF3EC', badgeText: 'FREE Kit on orders above ₹599', headline: 'Your Routine,\nAnywhere', cta: 'Shop Now →' },
+    { slideIndex: 2, bg: '#F5F5F0', badgeText: 'FREE Face Towel on orders above ₹899', headline: 'Cleanse.\nTreat. Glow.', cta: 'Shop Now →' },
+];
+
+/* ── Build an ordered array of 3 slides, merging DB docs over defaults ── */
+function buildSlides(dbDocs) {
+    return DEFAULTS.map(def => {
+        const doc = dbDocs.find(d => d.slideIndex === def.slideIndex);
+        if (!doc) return { ...def, image: '', isActive: true };
+        return {
+            slideIndex: doc.slideIndex,
+            bg: doc.bg || def.bg,
+            badgeText: doc.badgeText || def.badgeText,
+            headline: doc.headline || def.headline,
+            cta: doc.cta || def.cta,
+            image: doc.image || '',
+            imagePublicId: doc.imagePublicId || '',
+            isActive: doc.isActive,
+            _id: doc._id,
+            updatedAt: doc.updatedAt,
+        };
+    });
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GET /hero  — public, returns 3 ordered slides
+───────────────────────────────────────────────────────────── */
 router.get('/', async (req, res) => {
     try {
-        // Get all active slides sorted by most recent first
-        const slides = await HeroSlide.find({ isActive: true }).sort({ updatedAt: -1 });
-        const allSlides = await HeroSlide.find().sort({ updatedAt: -1 });
-
-        // Pick the best slide — most recently updated with an image
-        const best = slides.find(s => s.image) || allSlides[0] || null;
-
-        // Always synthesize a `config` object from the best slide so the frontend
-        // can read either `.config` or `.slides[n]`
-        const config = best ? {
-            _id: best._id,
-            badgeText: best.badgeText || '🌿 100% Eco-Friendly Shoe Care',
-            title: best.title || 'Keep Your Kicks',
-            highlightText: best.highlightText || 'Naturally Fresh',
-            description: best.description || best.subtitle || '',
-            image: best.image || '',
-            imagePublicId: best.imagePublicId || '',
-            isActive: best.isActive,
-            updatedAt: best.updatedAt,
-        } : null;
-
-        res.json({ success: true, config, slides: allSlides });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Failed to fetch hero config' });
+        const docs = await HeroSlide.find({}).sort({ slideIndex: 1 });
+        const slides = buildSlides(docs);
+        res.json({ success: true, slides });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Failed to fetch hero slides' });
     }
 });
 
-// GET hero settings (admin)
+/* ─────────────────────────────────────────────────────────────
+   GET /hero/all  — admin, same ordered array
+───────────────────────────────────────────────────────────── */
 router.get('/all', verifyToken, requireAdmin, async (req, res) => {
     try {
-        let config = await HeroSlide.findOne().sort({ updatedAt: -1 });
-        res.json({ success: true, config });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Failed to fetch hero config' });
+        const docs = await HeroSlide.find({}).sort({ slideIndex: 1 });
+        const slides = buildSlides(docs);
+        res.json({ success: true, slides });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Failed to fetch hero slides' });
     }
 });
 
-// CREATE or UPDATE hero config (admin) - always keeps exactly ONE hero document
-router.post('/', verifyToken, requireAdmin, (req, res) => {
+/* ─────────────────────────────────────────────────────────────
+   POST /hero/:index  — admin, upsert one slide by index (0/1/2)
+───────────────────────────────────────────────────────────── */
+router.post('/:index', verifyToken, requireAdmin, (req, res) => {
     uploadHero(req, res, async (err) => {
         if (err) {
             return res.status(400).json({ success: false, message: err.message || 'Image upload failed' });
         }
 
         try {
-            const { badgeText, title, highlightText, description, isActive } = req.body;
-
-            // If a new image was uploaded, delete ALL old images from Cloudinary first
-            if (req.file) {
-                const allExisting = await HeroSlide.find({});
-                for (const doc of allExisting) {
-                    if (doc.imagePublicId) {
-                        try { await cloudinary.uploader.destroy(doc.imagePublicId); } catch (e) { /* ok */ }
-                    }
-                }
-                // Delete ALL old slide documents — we'll create one fresh one below
-                await HeroSlide.deleteMany({});
+            const slideIndex = parseInt(req.params.index, 10);
+            if (isNaN(slideIndex) || slideIndex < 0 || slideIndex > 2) {
+                return res.status(400).json({ success: false, message: 'Slide index must be 0, 1, or 2' });
             }
 
-            // Build the update / insert object
+            const { bg, badgeText, headline, cta, isActive } = req.body;
             const updateData = {};
-            if (badgeText !== undefined) updateData.badgeText = badgeText;
-            if (title !== undefined) updateData.title = title;
-            if (highlightText !== undefined) updateData.highlightText = highlightText;
-            if (description !== undefined) updateData.description = description;
-            updateData.isActive = isActive === 'true' || isActive === true || isActive === undefined ? true : false;
 
+            if (bg !== undefined) updateData.bg = bg;
+            if (badgeText !== undefined) updateData.badgeText = badgeText;
+            if (headline !== undefined) updateData.headline = headline;
+            if (cta !== undefined) updateData.cta = cta;
+            updateData.isActive = (isActive === 'true' || isActive === true || isActive === undefined);
+
+            // Handle image upload — delete old Cloudinary image first
             if (req.file) {
-                updateData.image = req.file.path;            // Cloudinary HTTPS URL
-                updateData.imagePublicId = req.file.filename; // Cloudinary public_id
+                const existing = await HeroSlide.findOne({ slideIndex });
+                if (existing?.imagePublicId) {
+                    try { await cloudinary.uploader.destroy(existing.imagePublicId); } catch (e) { /* ok */ }
+                }
+                updateData.image = req.file.path;
+                updateData.imagePublicId = req.file.filename;
             }
 
-            // findOneAndUpdate with upsert — match any remaining document, or create one
-            const config = await HeroSlide.findOneAndUpdate(
-                {},                          // match any (there's only one config)
-                { $set: updateData },
-                { new: true, upsert: true, sort: { updatedAt: -1 } }
+            const slide = await HeroSlide.findOneAndUpdate(
+                { slideIndex },
+                { $set: { slideIndex, ...updateData } },
+                { new: true, upsert: true }
             );
 
-            res.json({ success: true, config });
-        } catch (error) {
-            console.error('Hero config save error:', error.message);
-            res.status(500).json({ success: false, message: error.message || 'Failed to save hero config' });
+            res.json({ success: true, slide });
+        } catch (err) {
+            console.error('Hero slide save error:', err.message);
+            res.status(500).json({ success: false, message: err.message || 'Failed to save slide' });
         }
     });
 });
 
-// DELETE hero config image (admin)
-router.delete('/image', verifyToken, requireAdmin, async (req, res) => {
+/* ─────────────────────────────────────────────────────────────
+   DELETE /hero/:index/image  — admin, remove image for one slide
+───────────────────────────────────────────────────────────── */
+router.delete('/:index/image', verifyToken, requireAdmin, async (req, res) => {
     try {
-        const config = await HeroSlide.findOne().sort({ updatedAt: -1 });
-        if (!config) return res.status(404).json({ success: false, message: 'No hero config found' });
+        const slideIndex = parseInt(req.params.index, 10);
+        const slide = await HeroSlide.findOne({ slideIndex });
+        if (!slide) return res.status(404).json({ success: false, message: 'Slide not found' });
 
-        if (config.imagePublicId) {
-            try { await cloudinary.uploader.destroy(config.imagePublicId); } catch (e) { /* ok */ }
+        if (slide.imagePublicId) {
+            try { await cloudinary.uploader.destroy(slide.imagePublicId); } catch (e) { /* ok */ }
         }
-        config.image = '';
-        config.imagePublicId = '';
-        await config.save();
-        res.json({ success: true, config });
-    } catch (error) {
+        slide.image = '';
+        slide.imagePublicId = '';
+        await slide.save();
+
+        res.json({ success: true, slide });
+    } catch (err) {
         res.status(500).json({ success: false, message: 'Failed to remove image' });
     }
 });
