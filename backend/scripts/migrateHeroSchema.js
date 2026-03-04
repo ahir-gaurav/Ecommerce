@@ -20,24 +20,37 @@ async function migrate() {
         console.log(`📂 Found ${slides.length} slides to process.`);
 
         for (const slide of slides) {
-            console.log(`⚙️  Processing Slide Index: ${slide.slideIndex}...`);
+            console.log(`⚙️  Processing Slide ID: ${slide._id} (Index: ${slide.slideIndex ?? 'N/A'})...`);
 
-            // Logic handled by the new pre-save hooks in HeroSlide.js
-            // but we explicitly trigger it here by saving.
-            if (slide.title && !slide.headline) {
-                slide.headline = slide.title;
-            } else if (slide.headline && !slide.title) {
-                slide.title = slide.headline;
+            // Handle documents missing required slideIndex (corrupt or legacy)
+            if (slide.slideIndex === undefined || slide.slideIndex === null) {
+                console.warn(`⚠️  Document ${slide._id} is missing slideIndex. Deleting corrupt/legacy data...`);
+                await HeroSlide.deleteOne({ _id: slide._id });
+                continue;
             }
 
-            await slide.save();
-            console.log(`✅ Slide ${slide.slideIndex} migrated.`);
+            // SUPER ROBUST NORMALIZATION
+            const headline = slide.headline || slide.title || "Shield Your Skin This Summer";
+            const title = slide.title || headline;
+
+            slide.headline = headline;
+            slide.title = title;
+
+            try {
+                await slide.save();
+                console.log(`✅ Slide ${slide.slideIndex} migrated.`);
+            } catch (saveErr) {
+                console.error(`⚠️  Failed to save slide ${slide.slideIndex}:`, JSON.stringify(saveErr.errors || saveErr, null, 2));
+            }
         }
 
         console.log('🏁 Migration complete. All documents are now v2 compliant.');
         process.exit(0);
     } catch (err) {
-        console.error('❌ Migration failed:', err);
+        console.error('❌ Migration failed:', err.message);
+        if (err.errors) {
+            console.error('Details:', JSON.stringify(err.errors, null, 2));
+        }
         process.exit(1);
     }
 }
