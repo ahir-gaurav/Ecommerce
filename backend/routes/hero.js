@@ -77,7 +77,10 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
             const updateData = { slideIndex };
             if (bg !== undefined) updateData.bg = bg;
             if (badgeText !== undefined) updateData.badgeText = badgeText;
-            if (headline !== undefined) updateData.headline = headline;
+            if (headline !== undefined) {
+                updateData.headline = headline;
+                updateData.title = headline; // satisfy legacy required title
+            }
             if (cta !== undefined) updateData.cta = cta;
             updateData.isActive = !(isActive === 'false' || isActive === false);
 

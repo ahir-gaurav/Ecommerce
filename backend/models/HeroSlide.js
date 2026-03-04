@@ -23,6 +23,10 @@ const heroSlideSchema = new mongoose.Schema({
         default: 'Shield Your Skin\nThis Summer',
         trim: true,
     },
+    title: {             // Backward compatibility shim
+        type: String,
+        trim: true,
+    },
     cta: {
         type: String,
         default: 'Shop Now →',
