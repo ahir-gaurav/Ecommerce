@@ -1,0 +1,251 @@
+/* ============================================================
+   HERO SLIDER v2  —  Dash-Bar Progress Indicator
+   Fonts: Playfair Display (headlines) + DM Sans (body)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@500;600;700;800&display=swap');
+
+/* ── Root ──────────────────────────────────────────────────── */
+.hs2-root {
+    position: relative;
+    width: 100%;
+    height: 88vh;
+    min-height: 480px;
+    overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+    background: #ffffff;
+    cursor: default;
+}
+
+/* ── Track (holds all slides absolutely) ──────────────────── */
+.hs2-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* ── Individual slide ─────────────────────────────────────── */
+.hs2-slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: stretch;
+    background: var(--slide-bg, #fff);
+
+    /* slide starts translated right, invisible */
+    transform: translateX(100%);
+    transition: transform 650ms cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: transform;
+}
+
+.hs2-slide--active {
+    transform: translateX(0%);
+}
+
+/* ── Image column — left 60% ─────────────────────────────── */
+.hs2-slide__img-col {
+    flex: 0 0 60%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hs2-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    /* Ken Burns: starts slightly zoomed, settles to natural */
+    transform: scale(1.04);
+    transition: transform 700ms ease;
+    will-change: transform;
+}
+
+.hs2-img--active {
+    transform: scale(1);
+}
+
+/* ── Content column — right 40% ──────────────────────────── */
+.hs2-slide__content {
+    flex: 0 0 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 22px;
+    padding: 56px 6vw 56px 4vw;
+}
+
+/* ── Badge chip ──────────────────────────────────────────── */
+.hs2-badge {
+    display: inline-block;
+    width: fit-content;
+    background: #1a1a1a;
+    color: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 50px;
+}
+
+/* ── Headline ─────────────────────────────────────────────── */
+.hs2-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 4.5vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.12;
+    color: #1a1a1a;
+    letter-spacing: -0.4px;
+    margin: 0;
+}
+
+/* ── CTA button ──────────────────────────────────────────── */
+.hs2-cta {
+    display: inline-block;
+    align-self: flex-start;
+    padding: 13px 32px;
+    background: #1a1a1a;
+    color: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.hs2-cta:hover {
+    transform: scale(1.04);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+}
+
+/* ============================================================
+   DASH-BAR PROGRESS INDICATOR
+   ============================================================ */
+.hs2-bars {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+}
+
+/* ── Each bar button ─────────────────────────────────────── */
+.hs2-bar {
+    position: relative;
+    height: 4px;
+    border-radius: 4px;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    overflow: hidden;
+    transition: width 0.4s ease, background 0.4s ease;
+    flex-shrink: 0;
+}
+
+/* Past: solid dark 24px */
+.hs2-bar--past {
+    width: 24px;
+    background: #1a1a1a;
+}
+
+/* Active: expands to 120px, shows fill */
+.hs2-bar--active {
+    width: 120px;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+/* Future: muted 24px */
+.hs2-bar--future {
+    width: 24px;
+    background: rgba(0, 0, 0, 0.20);
+}
+
+/* ── Fill element — CSS animation driven ─────────────────── */
+.hs2-bar__fill {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 0%;
+    height: 100%;
+    background: #1a1a1a;
+    border-radius: 4px;
+    display: block;
+    animation: hs2FillBar 4s linear forwards;
+}
+
+/* Pausing preserves fill position automatically */
+.hs2-bar__fill--paused {
+    animation-play-state: paused;
+}
+
+@keyframes hs2FillBar {
+    from {
+        width: 0%;
+    }
+
+    to {
+        width: 100%;
+    }
+}
+
+/* ── Hover hit target (slightly bigger for UX) ───────────── */
+.hs2-bar::before {
+    content: '';
+    position: absolute;
+    inset: -8px -4px;
+}
+
+/* ============================================================
+   RESPONSIVE — Mobile ≤ 768px
+   ============================================================ */
+@media (max-width: 768px) {
+    .hs2-root {
+        height: auto;
+        min-height: 100svh;
+    }
+
+    .hs2-slide {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .hs2-slide__img-col {
+        flex: 0 0 48vw;
+        width: 100%;
+        max-height: 48vw;
+    }
+
+    .hs2-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .hs2-slide__content {
+        flex: 1;
+        padding: 28px 24px 80px;
+        /* extra bottom for bars */
+        gap: 16px;
+    }
+
+    .hs2-headline {
+        font-size: clamp(1.7rem, 7vw, 2.4rem);
+    }
+
+    /* Bars: bottom center on mobile */
+    .hs2-bars {
+        left: 50%;
+        bottom: 20px;
+    }
+}

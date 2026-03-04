@@ -1,23 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { productAPI, heroAPI, tickerAPI } from '../../api';
-import { ContainerScroll } from '../../components/ui/container-scroll-animation';
+import { productAPI, tickerAPI } from '../../api';
+import HeroSlider from '../../components/HeroSlider/HeroSlider';
 import './Landing.css';
 
-const HERO_DEFAULTS = {
-    badgeText: '🌿 100% Eco-Friendly Shoe Care',
-    title: 'Keep Your Kicks',
-    highlightText: 'Naturally Fresh',
-    description: 'Bamboo charcoal, cedar & lavender — zero chemicals, 100% biodegradable. Reusable for months.',
-    image: null, // Removed hardcoded Nike image
-};
+
 
 function Landing() {
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [heroLoading, setHeroLoading] = useState(true);
-    const [hero, setHero] = useState(null);
     const [tickers, setTickers] = useState([]);
 
     // Filter / Sort state
@@ -31,9 +23,8 @@ function Landing() {
 
     const fetchInitialData = async () => {
         try {
-            const [productRes, heroRes, tickerRes] = await Promise.allSettled([
+            const [productRes, tickerRes] = await Promise.allSettled([
                 productAPI.getAll(),
-                heroAPI.getConfig(),
                 tickerAPI.getAll()
             ]);
 
@@ -41,60 +32,6 @@ function Landing() {
                 const fetchedProducts = productRes.value.data.products || productRes.value.data || [];
                 setProducts(fetchedProducts);
             }
-
-            if (heroRes.status === 'fulfilled') {
-                const data = heroRes.value.data;
-                console.log('🎯 Hero API response:', data);
-
-                // Handle both API shapes:
-                // New: { success, config: { badgeText, title, highlightText, description, image } }
-                // Old: { success, slides: [{ title, subtitle, image, isActive, ... }] }
-                const cfg = data.config;
-                const slides = data.slides;
-
-                if (cfg && cfg.image) {
-                    // New schema — use config directly
-                    setHero({
-                        badgeText: cfg.badgeText || HERO_DEFAULTS.badgeText,
-                        title: cfg.title || HERO_DEFAULTS.title,
-                        highlightText: cfg.highlightText || HERO_DEFAULTS.highlightText,
-                        description: cfg.description || HERO_DEFAULTS.description,
-                        image: cfg.image,
-                        _updated: cfg.updatedAt || Date.now(),
-                    });
-                } else if (slides && slides.length > 0) {
-                    // Old schema — pick the most recent active slide that has an image
-                    const activeSlides = slides
-                        .filter(s => s.isActive && s.image)
-                        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-                    const slide = activeSlides[0] || slides[slides.length - 1];
-                    setHero({
-                        badgeText: HERO_DEFAULTS.badgeText,
-                        title: slide?.title || HERO_DEFAULTS.title,
-                        highlightText: HERO_DEFAULTS.highlightText,
-                        description: HERO_DEFAULTS.description,
-                        image: slide?.image || null,
-                        _updated: slide?.updatedAt || Date.now(),
-                    });
-                } else if (cfg) {
-                    // New schema but no image uploaded yet — use text fields, no default image
-                    setHero({
-                        badgeText: cfg.badgeText || HERO_DEFAULTS.badgeText,
-                        title: cfg.title || HERO_DEFAULTS.title,
-                        highlightText: cfg.highlightText || HERO_DEFAULTS.highlightText,
-                        description: cfg.description || HERO_DEFAULTS.description,
-                        image: null,
-                        _updated: Date.now(),
-                    });
-                } else {
-                    // API responded but no usable data — fall back to full defaults
-                    setHero(HERO_DEFAULTS);
-                }
-            } else {
-                // API call failed entirely — fall back to full defaults
-                setHero(HERO_DEFAULTS);
-            }
-            setHeroLoading(false);
 
             if (tickerRes.status === 'fulfilled') {
                 setTickers(tickerRes.value.data.tickers || []);
@@ -140,161 +77,10 @@ function Landing() {
         return `${API_URL}${primary.url}`;
     };
 
-    const getHeroImage = () => {
-        if (!hero || !hero.image) return null;
-        const base = hero.image.startsWith('http') ? hero.image : `${API_URL}${hero.image}`;
-        // Add cache buster timestamp
-        return `${base}${base.includes('?') ? '&' : '?'}t=${hero._updated || Date.now()}`;
-    };
-
-    const heroImageSrc = getHeroImage();
-    const heroData = hero || HERO_DEFAULTS;
-
     return (
         <div className="landing">
-            {/* Hero — Scroll Animation */}
-            <section style={{ background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0d1f0d 100%)', overflow: 'hidden' }}>
-                <ContainerScroll
-                    titleComponent={
-                        <div style={{ padding: '0 20px' }} className={!heroLoading ? 'hero-fade-in' : ''}>
-                            {heroLoading ? (
-                                <div className="hero-skeleton-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    <div className="skeleton-text skeleton-badge" />
-                                    <div className="skeleton-text skeleton-title" />
-                                    <div className="skeleton-text skeleton-description" />
-                                </div>
-                            ) : (
-                                <>
-                                    <p style={{
-                                        fontSize: '14px',
-                                        fontWeight: '600',
-                                        letterSpacing: '3px',
-                                        textTransform: 'uppercase',
-                                        color: '#6ee77a',
-                                        marginBottom: '16px',
-                                        display: 'block',
-                                    }}>
-                                        {heroData.badgeText}
-                                    </p>
-                                    <h1 style={{
-                                        fontSize: 'clamp(2rem, 6vw, 5rem)',
-                                        fontWeight: '800',
-                                        lineHeight: '1.1',
-                                        color: '#ffffff',
-                                        marginBottom: '24px',
-                                        letterSpacing: '-1px',
-                                    }}>
-                                        {heroData.title}{' '}
-                                        <span style={{
-                                            background: 'linear-gradient(135deg, #6ee77a, #22c55e)',
-                                            WebkitBackgroundClip: 'text',
-                                            WebkitTextFillColor: 'transparent',
-                                            backgroundClip: 'text',
-                                        }}>
-                                            {heroData.highlightText}
-                                        </span>
-                                    </h1>
-                                    <p style={{
-                                        fontSize: 'clamp(1rem, 2vw, 1.25rem)',
-                                        color: '#9ca3af',
-                                        marginBottom: '32px',
-                                        maxWidth: '520px',
-                                        margin: '0 auto 32px',
-                                        lineHeight: '1.7',
-                                    }}>
-                                        {heroData.description}
-                                    </p>
-                                </>
-                            )}
-                            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                <button
-                                    onClick={() => navigate('/shop')}
-                                    style={{
-                                        display: 'inline-block',
-                                        padding: '14px 32px',
-                                        background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                                        color: '#fff',
-                                        borderRadius: '50px',
-                                        fontWeight: '700',
-                                        fontSize: '15px',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        boxShadow: '0 4px 24px rgba(34,197,94,0.4)',
-                                        transition: 'transform 0.2s, box-shadow 0.2s',
-                                        letterSpacing: '0.5px',
-                                    }}
-                                    onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(34,197,94,0.5)'; }}
-                                    onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(34,197,94,0.4)'; }}
-                                >
-                                    Shop Now →
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
-                                    }}
-                                    style={{
-                                        display: 'inline-block',
-                                        padding: '14px 32px',
-                                        background: 'transparent',
-                                        color: '#fff',
-                                        borderRadius: '50px',
-                                        fontWeight: '600',
-                                        fontSize: '15px',
-                                        border: '2px solid rgba(255,255,255,0.2)',
-                                        cursor: 'pointer',
-                                        transition: 'border-color 0.2s, background 0.2s',
-                                    }}
-                                    onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-                                    onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.background = 'transparent'; }}
-                                >
-                                    View Collection
-                                </button>
-                            </div>
-                        </div>
-                    }
-                >
-                    {/* Hero image inside the 3D card */}
-                    {heroLoading ? (
-                        // Skeleton placeholder — shown while API is loading, prevents old default image flash
-                        <div style={{
-                            width: '100%',
-                            height: '100%',
-                            borderRadius: '12px',
-                            background: 'linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%)',
-                            backgroundSize: '200% 100%',
-                            animation: 'shimmer 1.5s infinite',
-                        }} />
-                    ) : heroImageSrc ? (
-                        <img
-                            src={heroImageSrc}
-                            alt="Premium eco-friendly shoe care products"
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                objectPosition: 'center',
-                                borderRadius: '12px',
-                                display: 'block',
-                            }}
-                        />
-                    ) : (
-                        // No image configured in admin — show a styled placeholder
-                        <div style={{
-                            width: '100%',
-                            height: '100%',
-                            borderRadius: '12px',
-                            background: 'linear-gradient(135deg, #1a2e1a, #0d1f0d)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#6ee77a',
-                            fontSize: '3rem',
-                        }}>
-                            🌿
-                        </div>
-                    )}
-                </ContainerScroll>
-            </section>
+            {/* Hero Slider */}
+            <HeroSlider />
 
             {/* Marquee Banner */}
             <div className="marquee-banner">
