@@ -67,10 +67,12 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
         }
 
         try {
+            console.log('📬 HERO POST Body:', req.body);
             const { slideIndex: rawIndex, bg, badgeText, headline, title, cta, isActive } = req.body;
             const slideIndex = parseInt(rawIndex, 10);
 
             if (isNaN(slideIndex) || slideIndex < 0 || slideIndex > 2) {
+                console.error('❌ HERO POST INVALID INDEX:', rawIndex);
                 return res.status(400).json({ success: false, message: 'slideIndex must be 0, 1, or 2' });
             }
 
