@@ -27,12 +27,12 @@ export default function HeroSlider() {
                 const activeApiSlides = api.filter(s => s.isActive);
 
                 if (activeApiSlides.length > 0) {
-                    setSlides(activeApiSlides.map(s => ({
-                        bg: s.bg,
-                        badgeText: s.badgeText,
-                        headline: s.headline,
-                        cta: s.cta,
-                        image: s.image,
+                    setSlides(activeApiSlides.map((s, idx) => ({
+                        bg: s.bg || BASE_SLIDES[idx % BASE_SLIDES.length].bg,
+                        badgeText: s.badgeText || BASE_SLIDES[idx % BASE_SLIDES.length].badgeText,
+                        headline: s.headline || BASE_SLIDES[idx % BASE_SLIDES.length].headline,
+                        cta: s.cta || BASE_SLIDES[idx % BASE_SLIDES.length].cta,
+                        image: s.image || '',
                     })));
                 } else {
                     setSlides(BASE_SLIDES);
@@ -100,7 +100,7 @@ export default function HeroSlider() {
                         <div className="hs2-slide__content">
                             <span className="hs2-badge">{slide.badgeText}</span>
                             <h1 className="hs2-headline">
-                                {slide.headline.split('\n').map((line, li, arr) => (
+                                {(slide.headline || '').split('\n').map((line, li, arr) => (
                                     <span key={li}>
                                         {line}
                                         {li < arr.length - 1 && <br />}
