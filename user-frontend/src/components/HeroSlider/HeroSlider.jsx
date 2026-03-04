@@ -24,17 +24,19 @@ export default function HeroSlider() {
         heroAPI.getSlides()
             .then(res => {
                 const api = res.data.slides || [];
-                setSlides(BASE_SLIDES.map((def, i) => {
-                    const s = api[i];
-                    if (!s) return def;
-                    return {
-                        bg: s.bg || def.bg,
-                        badgeText: s.badgeText || def.badgeText,
-                        headline: s.headline || def.headline,
-                        cta: s.cta || def.cta,
-                        image: s.image || def.image,
-                    };
-                }));
+                const activeApiSlides = api.filter(s => s.isActive);
+
+                if (activeApiSlides.length > 0) {
+                    setSlides(activeApiSlides.map(s => ({
+                        bg: s.bg,
+                        badgeText: s.badgeText,
+                        headline: s.headline,
+                        cta: s.cta,
+                        image: s.image,
+                    })));
+                } else {
+                    setSlides(BASE_SLIDES);
+                }
             })
             .catch(() => { /* keep defaults */ });
     }, []);
@@ -46,12 +48,12 @@ export default function HeroSlider() {
      *  - No dependency on CSS animation events whatsoever.
      * ────────────────────────────────────────────────────────── */
     useEffect(() => {
-        if (paused) return;                          // hover → do nothing
+        if (paused || slides.length <= 1) return;    // no timer if paused or only one slide
         const id = setTimeout(() => {
-            setCurrent(c => (c + 1) % BASE_SLIDES.length);
+            setCurrent(c => (c + 1) % slides.length);
         }, DURATION);
         return () => clearTimeout(id);              // cleanup on every re-run
-    }, [current, paused]);                           // reset timer on slide change too
+    }, [current, paused, slides.length]);           // reset timer on slide change too
 
     /* ── Reset fill bar whenever slide changes ───────────────── */
     useEffect(() => {
