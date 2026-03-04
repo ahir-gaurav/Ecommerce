@@ -70,8 +70,12 @@ export const productAPI = {
 // Hero Section APIs
 export const heroAPI = {
     getAll: () => api.get('hero/all'),
-    saveSlide: (index, fd) => api.post(`hero/${index}`, fd),
-    removeImage: (index) => api.delete(`hero/${index}/image`),
+    saveSlide: (index, fd) => {
+        // Ensure slideIndex is part of the multipart form data
+        fd.append('slideIndex', index);
+        return api.post('hero', fd);
+    },
+    removeImage: (index) => api.delete(`hero/image?slideIndex=${index}`),
 };
 
 // Order APIs
