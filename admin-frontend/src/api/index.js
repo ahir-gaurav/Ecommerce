@@ -71,8 +71,7 @@ export const productAPI = {
 export const heroAPI = {
     getAll: () => api.get('hero/all'),
     saveSlide: (index, fd) => {
-        // Ensure slideIndex is part of the multipart form data
-        fd.append('slideIndex', index);
+        // slideIndex is already appended in the component for better ordering
         return api.post('hero', fd);
     },
     removeImage: (index) => api.delete(`hero/image?slideIndex=${index}`),

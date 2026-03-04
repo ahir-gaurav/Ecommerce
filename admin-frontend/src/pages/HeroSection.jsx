@@ -157,6 +157,7 @@ function HeroSection() {
         setError('');
         const slide = slides[activeTab];
         const fd = new FormData();
+        fd.append('slideIndex', activeTab); // ALWAYS APPEND INDEX FIRST for Multer reliability
         fd.append('bg', slide.bg);
         fd.append('badgeText', slide.badgeText);
         fd.append('headline', slide.headline);
