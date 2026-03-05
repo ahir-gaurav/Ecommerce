@@ -12,6 +12,7 @@ export default function HeroSlider() {
     const [current, setCurrent] = useState(0);
     const [paused, setPaused] = useState(false);
     const [fillKey, setFillKey] = useState(0);
+    const [loaded, setLoaded] = useState(false); // tracks whether API call finished
 
     // Keep a ref to latest slides count so the timer never uses a stale closure
     const slidesLenRef = useRef(1);
@@ -36,13 +37,11 @@ export default function HeroSlider() {
                     })));
                 }
             })
-            .catch(err => console.error('Failed to fetch hero slides:', err));
+            .catch(err => console.error('Failed to fetch hero slides:', err))
+            .finally(() => setLoaded(true));
     }, [API_BASE]);
 
     // ── Auto-advance timer ────────────────────────────────────
-    //  - Uses setTimeout (not CSS animationEnd) — reliable across all browsers
-    //  - Cleared and restarted on every slide change or pause toggle
-    //  - Uses slidesLenRef to avoid stale-closure bugs
     useEffect(() => {
         if (paused || slides.length <= 1) return;
 
@@ -51,12 +50,9 @@ export default function HeroSlider() {
         }, DURATION);
 
         return () => clearTimeout(id);
-    }, [current, paused, slides.length]);   // deps reset the timer on every change
+    }, [current, paused, slides.length]);
 
     // ── Reset fill bar on slide change OR when slide count changes ──
-    //  Adding slides.length here is the key fix:
-    //  When slides go from 1 (fallback) to 2+ (API loaded), fillKey bumps
-    //  so the bar resets instead of staying frozen at 100%.
     useEffect(() => {
         setFillKey(k => k + 1);
     }, [current, slides.length]);
@@ -66,8 +62,28 @@ export default function HeroSlider() {
 
     const handleMouseLeave = useCallback(() => {
         setPaused(false);
-        setFillKey(k => k + 1);   // restart fill bar from 0 when hover ends
+        setFillKey(k => k + 1);
     }, []);
+
+    // ── Loading skeleton — shown until first API response ─────
+    if (!loaded) {
+        return (
+            <section className="hs2-root">
+                <div className="hs2-track">
+                    <div className="hs2-slide hs2-slide--active">
+                        <div className="hs2-slide__img-col">
+                            <div className="hs2-img-placeholder shimmer" style={{ width: '100%', height: '100%' }} />
+                        </div>
+                        <div className="hs2-slide__content" style={{ '--slide-bg': '#f0f0f0' }}>
+                            <div className="shimmer" style={{ width: '80px', height: '24px', borderRadius: '50px' }} />
+                            <div className="shimmer" style={{ width: '90%', height: '48px', borderRadius: '8px' }} />
+                            <div className="shimmer" style={{ width: '140px', height: '44px', borderRadius: '50px' }} />
+                        </div>
+                    </div>
+                </div>
+            </section>
+        );
+    }
 
     // ── Render ────────────────────────────────────────────────
     return (
@@ -127,9 +143,6 @@ export default function HeroSlider() {
                             onClick={() => goTo(i)}
                             aria-label={`Go to slide ${i + 1}`}
                         >
-                            {/* Only animate when 2+ slides exist.
-                                This prevents the bar running to 100% and freezing
-                                during the single-fallback-slide phase (before API loads). */}
                             {state === 'active' && slides.length > 1 && (
                                 <span
                                     key={fillKey}
@@ -144,3 +157,4 @@ export default function HeroSlider() {
         </section>
     );
 }
+

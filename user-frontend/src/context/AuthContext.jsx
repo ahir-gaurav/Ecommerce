@@ -79,5 +79,6 @@ export const AuthProvider = ({ children }) => {
         logout
     };
 
+    // Always render children immediately — never block the tree
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

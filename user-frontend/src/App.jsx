@@ -19,7 +19,7 @@ import Profile from './pages/Profile/Profile';
 import Navbar from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
 
-// Protected Route Component
+// Protected Route — only blocks auth-required pages, NOT the entire app
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -64,8 +64,8 @@ function AppRoutes() {
   );
 }
 
-// Reads the logged-in user from AuthContext and passes their ID to CartProvider
-// This ensures the cart is user-scoped and clears automatically on logout
+// Cart reads userId from auth — cart is user-scoped and clears on logout
+// IMPORTANT: No longer blocks rendering while auth is loading
 function CartProviderWrapper({ children }) {
   const { user } = useAuth();
   return <CartProvider userId={user?._id}>{children}</CartProvider>;
