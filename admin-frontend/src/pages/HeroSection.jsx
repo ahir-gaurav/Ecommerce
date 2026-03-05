@@ -74,7 +74,7 @@ function HeroSection() {
     const [editingId, setEditingId] = useState(null); // null means "creating new"
     const [formData, setFormData] = useState({
         bg: '#D6F2FF',
-        badgeText: '',
+        badgeText: 'New Arrival',
         headline: '',
         cta: 'Shop Now →',
         isActive: true,
@@ -120,7 +120,7 @@ function HeroSection() {
             setEditingId(null);
             setFormData({
                 bg: '#D6F2FF',
-                badgeText: '',
+                badgeText: 'New Arrival',
                 headline: '',
                 cta: 'Shop Now →',
                 isActive: true,

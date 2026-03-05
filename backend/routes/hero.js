@@ -40,13 +40,17 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
 
             const slideData = {
                 order: parseInt(order || 0),
-                bg,
-                badgeText,
-                headline,
+                bg: bg || '#D6F2FF',
+                headline: headline || '',
                 title: title || headline || '',
-                cta,
+                cta: cta || 'Shop Now →',
                 isActive: isActive !== 'false' && isActive !== false,
             };
+            // Only set badgeText if it's a non-empty string;
+            // otherwise the Mongoose model default applies.
+            if (badgeText && badgeText.trim()) {
+                slideData.badgeText = badgeText.trim();
+            }
 
             if (req.file) {
                 slideData.image = req.file.path;
