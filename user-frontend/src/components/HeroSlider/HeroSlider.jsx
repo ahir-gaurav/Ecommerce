@@ -20,10 +20,11 @@ export default function HeroSlider() {
     useEffect(() => {
         heroAPI.getSlides()
             .then(res => {
-                const apiSlides = res.data.slides || [];
+                const apiSlides = res?.data?.slides || [];
                 if (apiSlides.length > 0) {
                     setSlides(apiSlides.map(s => ({
                         ...s,
+                        headline: s.headline || '',
                         image: s.image ? (s.image.startsWith('http') ? s.image : `${API_BASE}${s.image}`) : ''
                     })));
                 }
@@ -80,7 +81,7 @@ export default function HeroSlider() {
                             {slide.image ? (
                                 <img
                                     src={slide.image}
-                                    alt={slide.headline.replace('\n', ' ')}
+                                    alt={(slide.headline || '').replace('\n', ' ')}
                                     className={`hs2-img${i === current ? ' hs2-img--active' : ''}`}
                                 />
                             ) : (

@@ -29,12 +29,12 @@ function Landing() {
             ]);
 
             if (productRes.status === 'fulfilled') {
-                const fetchedProducts = productRes.value.data.products || productRes.value.data || [];
-                setProducts(fetchedProducts);
+                const fetchedProducts = productRes.value?.data?.products || productRes.value?.data || [];
+                setProducts(Array.isArray(fetchedProducts) ? fetchedProducts : []);
             }
 
             if (tickerRes.status === 'fulfilled') {
-                setTickers(tickerRes.value.data.tickers || []);
+                setTickers(tickerRes.value?.data?.tickers || []);
             }
         } catch (error) {
             console.error('Failed to fetch landing data:', error);
