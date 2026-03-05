@@ -4,22 +4,21 @@ const variantSchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: ['Standard', 'Premium', 'Deluxe']
+        // No enum — type may be extended by admin
     },
     size: {
         type: String,
         required: true,
-        enum: ['Small', 'Medium', 'Large']
+        // No enum — size may be extended by admin
     },
     fragrance: {
         type: String,
         required: true,
-        enum: ['Lavender', 'Cedar', 'Unscented', 'Mixed']
+        // No enum — fragrances are managed dynamically via the Fragrances admin page
     },
     priceAdjustment: {
         type: Number,
         default: 0,
-        comment: 'Price difference from base price (can be negative for discounts)'
     },
     stock: {
         type: Number,

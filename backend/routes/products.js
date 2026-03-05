@@ -39,7 +39,8 @@ router.post('/', verifyToken, requireAdmin, async (req, res) => {
         const product = await Product.create(req.body);
         res.status(201).json({ success: true, product });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Failed to create product' });
+        console.error('Product create error:', error.message);
+        res.status(500).json({ success: false, message: error.message || 'Failed to create product' });
     }
 });
 
