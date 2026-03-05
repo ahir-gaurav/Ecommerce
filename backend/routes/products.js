@@ -98,12 +98,30 @@ router.post('/:id/variants', verifyToken, requireAdmin, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
 
-        product.variants.push(req.body);
+        // Ensure priceAdjustment is a number
+        const variantData = { ...req.body };
+        if (variantData.priceAdjustment !== undefined) {
+            variantData.priceAdjustment = parseFloat(variantData.priceAdjustment) || 0;
+        }
+        if (variantData.stock !== undefined) {
+            variantData.stock = parseInt(variantData.stock) || 0;
+        }
+
+        product.variants.push(variantData);
         await product.save();
 
         res.json({ success: true, product });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Failed to add variant' });
+        console.error('Add variant error:', error);
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(e => e.message).join(', ');
+            return res.status(400).json({ success: false, message: messages });
+        }
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyValue || {})[0] || 'sku';
+            return res.status(400).json({ success: false, message: `Duplicate value for ${field}. Please use a unique SKU.` });
+        }
+        res.status(500).json({ success: false, message: error.message || 'Failed to add variant' });
     }
 });
 

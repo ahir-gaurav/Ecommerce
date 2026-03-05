@@ -56,9 +56,12 @@ function Products() {
             const res = await fragranceAPI.getAll();
             const list = res.data.fragrances || [];
             setFragrances(list);
-            // Set the first fragrance as default if available
+            // Set the first fragrance as default if available AND auto-generate SKU
             if (list.length > 0) {
-                setVariantForm(v => ({ ...v, fragrance: list[0].name }));
+                setVariantForm(v => {
+                    const fragrance = list[0].name;
+                    return { ...v, fragrance, sku: buildSKU(v.type, v.size, fragrance) };
+                });
             }
         } catch (err) {
             // Fall back to hardcoded if API fails
@@ -276,8 +279,14 @@ function Products() {
                                             <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedProduct(product); setShowImageModal(true); }}>Images</button>
                                             <button className="btn btn-secondary btn-sm" onClick={() => {
                                                 setSelectedProduct(product);
-                                                const defaultFragrance = fragrances.length > 0 ? fragrances[0].name : '';
-                                                setVariantForm({ ...emptyVariant, fragrance: defaultFragrance });
+                                                const defaultFragrance = fragrances.length > 0 ? fragrances[0].name : 'Lavender';
+                                                const defaultType = emptyVariant.type;
+                                                const defaultSize = emptyVariant.size;
+                                                setVariantForm({
+                                                    ...emptyVariant,
+                                                    fragrance: defaultFragrance,
+                                                    sku: buildSKU(defaultType, defaultSize, defaultFragrance)
+                                                });
                                                 setShowVariantModal(true);
                                             }}>+ Variant</button>
                                             <button className="btn btn-danger btn-sm" onClick={() => handleDelete(product._id)}>Delete</button>
