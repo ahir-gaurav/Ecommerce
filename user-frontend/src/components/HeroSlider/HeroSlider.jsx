@@ -13,7 +13,6 @@ export default function HeroSlider() {
     const [current, setCurrent] = useState(0);
     const [paused, setPaused] = useState(false);
     const [fillKey, setFillKey] = useState(0);
-    const [loading, setLoading] = useState(true);
 
     const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 
@@ -29,8 +28,7 @@ export default function HeroSlider() {
                     })));
                 }
             })
-            .catch(err => console.error('Failed to fetch hero slides:', err))
-            .finally(() => setLoading(false));
+            .catch(err => console.error('Failed to fetch hero slides:', err));
     }, [API_BASE]);
 
     /* ── Auto-advance timer ──────────────────────────────────────
