@@ -74,12 +74,15 @@ function Products() {
         return `KDS-${t}-${s}-${f}`;
     };
 
-    useEffect(() => {
-        // Auto-update SKU whenever Type, Size, or Fragrance changes
-        const generatedSKU = buildSKU(variantForm.type, variantForm.size, variantForm.fragrance);
-        setVariantForm(v => ({ ...v, sku: generatedSKU }));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [variantForm.type, variantForm.size, variantForm.fragrance]);
+    // Updates variant field(s) and regenerates SKU in one atomic state call.
+    // Using onChange helper instead of useEffect avoids re-render side effects.
+    const updateVariantWithSKU = (updates) => {
+        setVariantForm(prev => {
+            const next = { ...prev, ...updates };
+            next.sku = buildSKU(next.type, next.size, next.fragrance);
+            return next;
+        });
+    };
 
     // Returns a usable image src — handles both Cloudinary (http) and local (/uploads) URLs
     const getImageSrc = (url) => {
@@ -394,7 +397,7 @@ function Products() {
                             <div className="form-row-3">
                                 <div className="form-group">
                                     <label>Type</label>
-                                    <select value={variantForm.type} onChange={(e) => setVariantForm({ ...variantForm, type: e.target.value })}>
+                                    <select value={variantForm.type} onChange={(e) => updateVariantWithSKU({ type: e.target.value })}>
                                         <option>Standard</option>
                                         <option>Premium</option>
                                         <option>Deluxe</option>
@@ -402,7 +405,7 @@ function Products() {
                                 </div>
                                 <div className="form-group">
                                     <label>Size</label>
-                                    <select value={variantForm.size} onChange={(e) => setVariantForm({ ...variantForm, size: e.target.value })}>
+                                    <select value={variantForm.size} onChange={(e) => updateVariantWithSKU({ size: e.target.value })}>
                                         <option>Small</option>
                                         <option>Medium</option>
                                         <option>Large</option>
@@ -410,7 +413,7 @@ function Products() {
                                 </div>
                                 <div className="form-group">
                                     <label>Fragrance</label>
-                                    <select value={variantForm.fragrance} onChange={(e) => setVariantForm({ ...variantForm, fragrance: e.target.value })}>
+                                    <select value={variantForm.fragrance} onChange={(e) => updateVariantWithSKU({ fragrance: e.target.value })}>
                                         {fragrances.length > 0 ? (
                                             fragrances.map(f => (
                                                 <option key={f._id} value={f.name}>{f.name}</option>
