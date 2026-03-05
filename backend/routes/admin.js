@@ -20,8 +20,10 @@ router.get('/dashboard', verifyToken, requireAdmin, async (req, res) => {
             revenueResult,
             monthlyResult,
             ordersToday,
-            products,
-            totalUsers
+            productStats,
+            totalUsers,
+            bestSelling,
+            slowMoving
         ] = await Promise.all([
             // Total Revenue (Completed orders only)
             Order.aggregate([
@@ -40,33 +42,47 @@ router.get('/dashboard', verifyToken, requireAdmin, async (req, res) => {
             ]),
             // Orders today count
             Order.countDocuments({ createdAt: { $gte: today } }),
-            // Total active products
-            Product.find({ isActive: true }).lean(),
+            // Product stats (Total active count)
+            Product.countDocuments({ isActive: true }),
             // Total users count
-            User.countDocuments()
+            User.countDocuments(),
+            // Best Selling Variants (via aggregation)
+            Product.aggregate([
+                { $match: { isActive: true } },
+                { $unwind: '$variants' },
+                { $sort: { 'variants.salesCount': -1 } },
+                { $limit: 5 },
+                {
+                    $project: {
+                        _id: 0,
+                        product: '$name',
+                        variant: { $concat: ['$variants.type', ' - ', '$variants.size', ' - ', '$variants.fragrance'] },
+                        salesCount: '$variants.salesCount',
+                        stock: '$variants.stock'
+                    }
+                }
+            ]),
+            // Slow Moving Variants (via aggregation)
+            Product.aggregate([
+                { $match: { isActive: true } },
+                { $unwind: '$variants' },
+                { $match: { 'variants.stock': { $gt: 0 } } },
+                { $sort: { 'variants.salesCount': 1 } },
+                { $limit: 5 },
+                {
+                    $project: {
+                        _id: 0,
+                        product: '$name',
+                        variant: { $concat: ['$variants.type', ' - ', '$variants.size', ' - ', '$variants.fragrance'] },
+                        salesCount: '$variants.salesCount',
+                        stock: '$variants.stock'
+                    }
+                }
+            ])
         ]);
 
         const totalRevenue = revenueResult[0]?.total || 0;
         const monthlySales = monthlyResult[0]?.total || 0;
-
-        // Process variant sales via products data
-        const variantSales = [];
-        products.forEach(product => {
-            product.variants.forEach(variant => {
-                variantSales.push({
-                    product: product.name,
-                    variant: `${variant.type} - ${variant.size} - ${variant.fragrance}`,
-                    salesCount: variant.salesCount || 0,
-                    stock: variant.stock || 0
-                });
-            });
-        });
-
-        const bestSelling = [...variantSales].sort((a, b) => b.salesCount - a.salesCount).slice(0, 5);
-        const slowMoving = variantSales
-            .filter(v => v.stock > 0)
-            .sort((a, b) => a.salesCount - b.salesCount)
-            .slice(0, 5);
 
         res.json({
             success: true,
@@ -76,7 +92,7 @@ router.get('/dashboard', verifyToken, requireAdmin, async (req, res) => {
                 ordersToday,
                 bestSelling,
                 slowMoving,
-                totalProducts: products.length,
+                totalProducts: productStats,
                 totalUsers
             }
         });
