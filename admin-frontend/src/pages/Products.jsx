@@ -185,6 +185,7 @@ function Products() {
     const handleAddVariant = async (e) => {
         e.preventDefault();
         setSaving(true);
+        setError('');
         try {
             await productAPI.addVariant(selectedProduct._id, variantForm);
             setSuccess('Variant added successfully');
@@ -192,7 +193,10 @@ function Products() {
             setVariantForm(emptyVariant);
             fetchProducts();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to add variant');
+            const msg = err.response?.data?.message || err.message || 'Failed to add variant';
+            const detail = err.response?.data?.error ? `: ${msg}` : '';
+            setError(msg);
+            console.error('Variant add error:', err.response?.data || err);
         } finally {
             setSaving(false);
         }
@@ -279,7 +283,7 @@ function Products() {
                                             <button className="btn btn-secondary btn-sm" onClick={() => { setSelectedProduct(product); setShowImageModal(true); }}>Images</button>
                                             <button className="btn btn-secondary btn-sm" onClick={() => {
                                                 setSelectedProduct(product);
-                                                const defaultFragrance = fragrances.length > 0 ? fragrances[0].name : 'Lavender';
+                                                const defaultFragrance = fragrances.length > 0 ? fragrances[0].name : (variantForm.fragrance || 'Lavender');
                                                 const defaultType = emptyVariant.type;
                                                 const defaultSize = emptyVariant.size;
                                                 setVariantForm({
