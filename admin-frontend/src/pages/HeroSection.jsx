@@ -87,7 +87,7 @@ function HeroSection() {
             const res = await heroAPI.getAll();
             const apiSlides = res.data.slides || [];
             setSlides(SLIDE_DEFAULTS.map((def, i) => {
-                const s = apiSlides[i] || {};
+                const s = apiSlides.find(x => x.slideIndex === i) || {};
                 return {
                     bg: s.bg || def.bg,
                     badgeText: s.badgeText || def.badgeText,

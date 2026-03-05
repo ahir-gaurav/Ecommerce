@@ -69,6 +69,12 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
         try {
             console.log('📬 HERO POST Body:', req.body);
             const { slideIndex: rawIndex, bg, badgeText, headline, title, cta, isActive } = req.body;
+
+            // Strict Presence Check
+            if (rawIndex === undefined || rawIndex === null || rawIndex === '') {
+                return res.status(400).json({ success: false, message: 'slideIndex is required' });
+            }
+
             const slideIndex = parseInt(rawIndex, 10);
 
             if (isNaN(slideIndex) || slideIndex < 0 || slideIndex > 2) {
@@ -76,6 +82,7 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
                 return res.status(400).json({ success: false, message: 'slideIndex must be 0, 1, or 2' });
             }
 
+            // Ensure slideIndex is ALWAYS included in the update data to prevent null indices
             const updateData = { slideIndex };
             if (bg !== undefined) updateData.bg = bg;
             if (badgeText !== undefined) updateData.badgeText = badgeText;
@@ -96,10 +103,11 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
                 updateData.imagePublicId = req.file.filename;
             }
 
+            console.log(`📝 Upserting Slide ${slideIndex}...`);
             const slide = await HeroSlide.findOneAndUpdate(
                 { slideIndex },
                 { $set: updateData },
-                { new: true, upsert: true }
+                { new: true, upsert: true, runValidators: true }
             );
 
             res.json({ success: true, slide });
