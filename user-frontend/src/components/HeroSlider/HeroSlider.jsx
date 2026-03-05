@@ -24,8 +24,8 @@ export default function HeroSlider() {
                     setSlides(apiSlides.map(s => ({
                         ...s,
                         headline: s.headline || s.title || '',
-                        badgeText: s.badgeText || '',
-                        cta: s.cta || 'Shop Now →',
+                        badgeText: s.badgeText || s.subtitle || '', // Support multiple backend field names
+                        cta: s.cta || s.ctaText || 'Shop Now →',   // Support multiple backend field names
                         image: s.image ? (s.image.startsWith('http') ? s.image : `${API_BASE}${s.image}`) : ''
                     })));
                 }
@@ -33,24 +33,15 @@ export default function HeroSlider() {
             .catch(err => console.error('Failed to fetch hero slides:', err));
     }, [API_BASE]);
 
-    /* ── Auto-advance timer ──────────────────────────────────────
-     *  A plain setTimeout is the only reliable primitive here.
-     *  - Re-created every time `current` or `paused` changes.
-     *  - When `paused` is true we simply never schedule it.
-     *  - No dependency on CSS animation events whatsoever.
-     * ────────────────────────────────────────────────────────── */
-    useEffect(() => {
-        if (paused || slides.length <= 1) return;    // no timer if paused or only one slide
-        const id = setTimeout(() => {
-            setCurrent(c => (c + 1) % slides.length);
-        }, DURATION);
-        return () => clearTimeout(id);              // cleanup on every re-run
-    }, [current, paused, slides.length]);           // reset timer on slide change too
+    const goToNext = useCallback(() => {
+        if (slides.length <= 1) return;
+        setCurrent(c => (c + 1) % slides.length);
+    }, [slides.length]);
 
-    /* ── Reset fill bar whenever slide changes ───────────────── */
+    /* ── Reset fill bar whenever slide or data changes ───────── */
     useEffect(() => {
         setFillKey(k => k + 1);
-    }, [current]);
+    }, [current, slides.length]);
 
     /* ── Navigation helpers ──────────────────────────────────── */
     const goTo = useCallback((i) => { setCurrent(i); }, []);
@@ -59,6 +50,8 @@ export default function HeroSlider() {
     // sync with the freshly-restarted 4-second timer.
     const handleMouseLeave = useCallback(() => {
         setPaused(false);
+        // fillKey bump is handled by the useEffect above if we wanted to restart, 
+        // but here we just let the animation resume or restart by bumping key
         setFillKey(k => k + 1);
     }, []);
 
@@ -90,7 +83,9 @@ export default function HeroSlider() {
                         </div>
 
                         <div className="hs2-slide__content">
-                            <span className="hs2-badge">{slide.badgeText}</span>
+                            {slide.badgeText && (
+                                <span className="hs2-badge">{slide.badgeText}</span>
+                            )}
                             <h1 className="hs2-headline">
                                 {(slide.headline || '').split('\n').map((line, li, arr) => (
                                     <span key={li}>
@@ -128,6 +123,7 @@ export default function HeroSlider() {
                                      * paused class freezes it in place while hovered.
                                      */
                                     className={`hs2-bar__fill${paused ? ' hs2-bar__fill--paused' : ''}`}
+                                    onAnimationEnd={goToNext}
                                 />
                             )}
                         </button>
