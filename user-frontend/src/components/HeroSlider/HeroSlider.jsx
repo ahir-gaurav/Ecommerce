@@ -53,12 +53,13 @@ export default function HeroSlider() {
         return () => clearTimeout(id);
     }, [current, paused, slides.length]);   // deps reset the timer on every change
 
-    // ── Reset fill bar on slide change ────────────────────────
-    //  The CSS animation is purely cosmetic — it does NOT drive slide changes.
-    //  Bumping fillKey mounts a fresh <span> so the animation restarts cleanly.
+    // ── Reset fill bar on slide change OR when slide count changes ──
+    //  Adding slides.length here is the key fix:
+    //  When slides go from 1 (fallback) to 2+ (API loaded), fillKey bumps
+    //  so the bar resets instead of staying frozen at 100%.
     useEffect(() => {
         setFillKey(k => k + 1);
-    }, [current]);
+    }, [current, slides.length]);
 
     // ── Navigation helpers ────────────────────────────────────
     const goTo = useCallback((i) => { setCurrent(i); }, []);
@@ -126,11 +127,14 @@ export default function HeroSlider() {
                             onClick={() => goTo(i)}
                             aria-label={`Go to slide ${i + 1}`}
                         >
-                            {state === 'active' && (
+                            {/* Only animate when 2+ slides exist.
+                                This prevents the bar running to 100% and freezing
+                                during the single-fallback-slide phase (before API loads). */}
+                            {state === 'active' && slides.length > 1 && (
                                 <span
                                     key={fillKey}
                                     className={`hs2-bar__fill${paused ? ' hs2-bar__fill--paused' : ''}`}
-                                /* NO onAnimationEnd here — setTimeout is the source of truth */
+                                /* NO onAnimationEnd — setTimeout is the source of truth */
                                 />
                             )}
                         </button>
