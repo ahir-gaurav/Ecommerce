@@ -43,7 +43,7 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
                 bg,
                 badgeText,
                 headline,
-                title: title || headline,
+                title: title || headline || '',
                 cta,
                 isActive: isActive !== 'false' && isActive !== false,
             };

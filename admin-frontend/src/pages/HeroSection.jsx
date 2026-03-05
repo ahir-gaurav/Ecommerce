@@ -149,6 +149,7 @@ function HeroSection() {
 
         const fd = new FormData();
         Object.keys(formData).forEach(key => fd.append(key, formData[key]));
+        fd.append('title', formData.headline); // Explicit sync for legacy-hardened backends
         if (selectedFile) fd.append('image', selectedFile);
 
         try {

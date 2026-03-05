@@ -51,6 +51,8 @@ const heroSlideSchema = new mongoose.Schema({
     title: {
         type: String,
         trim: true,
+        required: false,
+        default: '',
     },
 }, {
     timestamps: true,
