@@ -106,14 +106,5 @@ export const tickerAPI = {
     reorder: (items) => api.put('tickers/reorder', { items })
 };
 
-// Coupon APIs
-export const couponAPI = {
-    getAll: () => api.get('coupons'),
-    create: (data) => api.post('coupons', data),
-    update: (id, data) => api.put(`coupons/${id}`, data),
-    delete: (id) => api.delete(`coupons/${id}`),
-    toggleActive: (id) => api.patch(`coupons/${id}/toggle`),
-    validate: (data) => api.post('coupons/validate', data)
-};
 
 export default api;

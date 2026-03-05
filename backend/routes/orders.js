@@ -74,9 +74,6 @@ router.post('/', verifyToken, requireAuth, async (req, res) => {
             estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
         });
 
-        // Increment user's orderCount for first-order coupon tracking
-        await User.findByIdAndUpdate(req.currentUser._id, { $inc: { orderCount: 1 } });
-
         res.status(201).json({ success: true, order });
     } catch (error) {
         console.error('Create order error:', error);
