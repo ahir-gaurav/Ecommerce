@@ -57,8 +57,6 @@ const heroSlideSchema = new mongoose.Schema({
     },
 }, {
     timestamps: true,
-    // Allows us to handle fields not explicitly in the schema if they come from old DB entries
-    strict: false
 });
 
 /**
