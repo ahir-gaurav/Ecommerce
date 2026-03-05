@@ -21,8 +21,20 @@ function Dashboard() {
         }
     };
 
-    if (loading) return <div className="loading-page"><div className="spinner"></div></div>;
-    if (error) return <div className="error-msg">{error}</div>;
+    if (loading) return (
+        <div className="loading-page">
+            <div className="spinner"></div>
+            <p style={{ marginTop: 20, color: '#666' }}>Waking up specialized systems...</p>
+        </div>
+    );
+
+    if (error) return (
+        <div className="error-msg" style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <span style={{ fontSize: '48px', display: 'block', marginBottom: '20px' }}>⚠️</span>
+            {error}
+            <button onClick={fetchDashboard} className="btn-primary" style={{ marginTop: '20px', display: 'inline-block' }}>Retry Load</button>
+        </div>
+    );
 
     return (
         <div>

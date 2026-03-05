@@ -15,39 +15,58 @@ router.get('/dashboard', verifyToken, requireAdmin, async (req, res) => {
 
         const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-        // Total revenue
-        const completedOrders = await Order.find({ 'paymentInfo.status': 'Completed' });
-        const totalRevenue = completedOrders.reduce((sum, order) => sum + order.pricing.total, 0);
+        // Fetch multiple metrics concurrently
+        const [
+            revenueResult,
+            monthlyResult,
+            ordersToday,
+            products,
+            totalUsers
+        ] = await Promise.all([
+            // Total Revenue (Completed orders only)
+            Order.aggregate([
+                { $match: { 'paymentInfo.status': 'Completed' } },
+                { $group: { _id: null, total: { $sum: '$pricing.total' } } }
+            ]),
+            // Monthly Sales (Completed orders this month)
+            Order.aggregate([
+                {
+                    $match: {
+                        'paymentInfo.status': 'Completed',
+                        createdAt: { $gte: thisMonth }
+                    }
+                },
+                { $group: { _id: null, total: { $sum: '$pricing.total' } } }
+            ]),
+            // Orders today count
+            Order.countDocuments({ createdAt: { $gte: today } }),
+            // Total active products
+            Product.find({ isActive: true }).lean(),
+            // Total users count
+            User.countDocuments()
+        ]);
 
-        // Monthly sales
-        const monthlyOrders = await Order.find({
-            createdAt: { $gte: thisMonth },
-            'paymentInfo.status': 'Completed'
-        });
-        const monthlySales = monthlyOrders.reduce((sum, order) => sum + order.pricing.total, 0);
+        const totalRevenue = revenueResult[0]?.total || 0;
+        const monthlySales = monthlyResult[0]?.total || 0;
 
-        // Orders today
-        const ordersToday = await Order.countDocuments({
-            createdAt: { $gte: today }
-        });
-
-        // Best-selling variants
-        const products = await Product.find({ isActive: true });
+        // Process variant sales via products data
         const variantSales = [];
-
         products.forEach(product => {
             product.variants.forEach(variant => {
                 variantSales.push({
                     product: product.name,
                     variant: `${variant.type} - ${variant.size} - ${variant.fragrance}`,
-                    salesCount: variant.salesCount,
-                    stock: variant.stock
+                    salesCount: variant.salesCount || 0,
+                    stock: variant.stock || 0
                 });
             });
         });
 
-        const bestSelling = variantSales.sort((a, b) => b.salesCount - a.salesCount).slice(0, 5);
-        const slowMoving = variantSales.filter(v => v.stock > 0).sort((a, b) => a.salesCount - b.salesCount).slice(0, 5);
+        const bestSelling = [...variantSales].sort((a, b) => b.salesCount - a.salesCount).slice(0, 5);
+        const slowMoving = variantSales
+            .filter(v => v.stock > 0)
+            .sort((a, b) => a.salesCount - b.salesCount)
+            .slice(0, 5);
 
         res.json({
             success: true,
@@ -58,7 +77,7 @@ router.get('/dashboard', verifyToken, requireAdmin, async (req, res) => {
                 bestSelling,
                 slowMoving,
                 totalProducts: products.length,
-                totalUsers: await User.countDocuments()
+                totalUsers
             }
         });
     } catch (error) {
