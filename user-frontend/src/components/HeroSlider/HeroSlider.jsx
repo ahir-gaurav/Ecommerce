@@ -23,7 +23,9 @@ export default function HeroSlider() {
                 if (apiSlides.length > 0) {
                     setSlides(apiSlides.map(s => ({
                         ...s,
-                        headline: s.headline || '',
+                        headline: s.headline || s.title || '',
+                        badgeText: s.badgeText || '',
+                        cta: s.cta || 'Shop Now →',
                         image: s.image ? (s.image.startsWith('http') ? s.image : `${API_BASE}${s.image}`) : ''
                     })));
                 }
