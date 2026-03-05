@@ -224,8 +224,8 @@
    ============================================================ */
 @media (max-width: 768px) {
     .hs2-root {
-        height: auto;
-        min-height: 100svh;
+        height: 100svh;
+        min-height: 480px;
     }
 
     .hs2-slide {

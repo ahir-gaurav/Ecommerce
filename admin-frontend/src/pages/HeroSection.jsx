@@ -8,7 +8,7 @@ const SLIDE_DEFAULTS = [
     { bg: '#F5F5F0', badgeText: 'FREE Face Towel on orders above ₹899', headline: 'Cleanse.\nTreat. Glow.', cta: 'Shop Now →', image: '', isActive: true },
 ];
 
-const LABELS = ['Slide 1 · Sun Protection', 'Slide 2 · Travel Kit', 'Slide 3 · Free Gift'];
+const LABELS = ['Slide 1', 'Slide 2', 'Slide 3'];
 
 /* ── Small live preview ──────────────────────────────────── */
 function SlidePreview({ slide, preview }) {
