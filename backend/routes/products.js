@@ -36,10 +36,29 @@ router.get('/:id', async (req, res) => {
 // Create product (admin only)
 router.post('/', verifyToken, requireAdmin, async (req, res) => {
     try {
-        const product = await Product.create(req.body);
+        const body = { ...req.body };
+
+        // Ensure basePrice is a valid number
+        if (body.basePrice !== undefined) {
+            body.basePrice = parseFloat(body.basePrice);
+            if (isNaN(body.basePrice)) {
+                return res.status(400).json({ success: false, message: 'Base price must be a valid number' });
+            }
+        }
+
+        const product = await Product.create(body);
         res.status(201).json({ success: true, product });
     } catch (error) {
-        console.error('Product create error:', error.message);
+        console.error('Product create error:', error);
+        // Return full validation error details
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(e => e.message).join(', ');
+            return res.status(400).json({ success: false, message: messages });
+        }
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyValue || {})[0] || 'field';
+            return res.status(400).json({ success: false, message: `Duplicate value for ${field}. Please use a unique value.` });
+        }
         res.status(500).json({ success: false, message: error.message || 'Failed to create product' });
     }
 });

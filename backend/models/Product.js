@@ -29,7 +29,9 @@ const variantSchema = new mongoose.Schema({
     sku: {
         type: String,
         required: true,
-        unique: true
+        // NOTE: Do NOT use unique:true here — unique on subdocument array fields
+        // creates a global sparse index that causes E11000 conflicts between different products.
+        // SKU uniqueness is enforced at the application level in the pre-save hook below.
     },
     salesCount: {
         type: Number,
