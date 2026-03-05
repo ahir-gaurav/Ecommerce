@@ -10,6 +10,7 @@ function Landing() {
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [tickers, setTickers] = useState([]);
 
     // Filter / Sort state
@@ -22,6 +23,8 @@ function Landing() {
     }, []);
 
     const fetchInitialData = async () => {
+        setLoading(true);
+        setError(null);
         try {
             const [productRes, tickerRes] = await Promise.allSettled([
                 productAPI.getAll(),
@@ -31,17 +34,37 @@ function Landing() {
             if (productRes.status === 'fulfilled') {
                 const fetchedProducts = productRes.value?.data?.products || productRes.value?.data || [];
                 setProducts(Array.isArray(fetchedProducts) ? fetchedProducts : []);
+            } else {
+                console.error('Products fetch failed:', productRes.reason);
+                setError('Failed to load products. Please check your connection.');
             }
 
             if (tickerRes.status === 'fulfilled') {
                 setTickers(tickerRes.value?.data?.tickers || []);
             }
-        } catch (error) {
-            console.error('Failed to fetch landing data:', error);
+        } catch (err) {
+            console.error('Failed to fetch landing data:', err);
+            setError('Something went wrong. Please try again later.');
         } finally {
             setLoading(false);
         }
     };
+
+    // Skeleton Component for Products
+    const ProductsSkeleton = () => (
+        <div className="variants-grid">
+            {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="skeleton-card">
+                    <div className="shimmer sk-img" />
+                    <div className="shimmer sk-badge" />
+                    <div className="shimmer sk-fragrance" />
+                    <div className="shimmer sk-name" />
+                    <div className="shimmer sk-price" />
+                    <div className="shimmer sk-btn" />
+                </div>
+            ))}
+        </div>
+    );
 
     // Group product variants by type
     const getVariantsByType = () => {
@@ -119,8 +142,13 @@ function Landing() {
                     </div>
 
                     {loading ? (
-                        <div className="flex-center" style={{ padding: '60px 0' }}>
-                            <div className="spinner"></div>
+                        <ProductsSkeleton />
+                    ) : error ? (
+                        <div className="error-container">
+                            <p>⚠️ {error}</p>
+                            <button className="btn-retry" onClick={fetchInitialData}>
+                                Retry Loading
+                            </button>
                         </div>
                     ) : hasVariants ? (() => {
                         // Limit to top 4 "fast selling" variants

@@ -689,3 +689,76 @@
         height: 50vh;
     }
 }
+
+/* ================================================
+   SKELETON LOADING
+   ================================================ */
+.skeleton-card {
+    background: #fafaf8;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 24px 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.shimmer {
+    background: linear-gradient(
+        90deg, 
+        rgba(0, 0, 0, 0.03) 25%, 
+        rgba(0, 0, 0, 0.08) 50%, 
+        rgba(0, 0, 0, 0.03) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 2s infinite linear;
+    border-radius: 4px;
+}
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.sk-img { height: 160px; width: 100%; border-radius: 8px; }
+.sk-badge { height: 16px; width: 40px; border-radius: 20px; }
+.sk-fragrance { height: 14px; width: 60%; }
+.sk-name { height: 18px; width: 85%; }
+.sk-price { height: 26px; width: 50%; margin: 4px auto; }
+.sk-btn { height: 36px; width: 100%; border-radius: 4px; }
+
+/* ERROR STATE */
+.error-container {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fff5f5;
+    border-radius: 12px;
+    border: 1px dashed #feb2b2;
+    margin: 20px 0;
+}
+
+.error-container p {
+    color: #c53030;
+    margin-bottom: 20px;
+    font-size: 15px;
+}
+
+.btn-retry {
+    padding: 10px 24px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background 0.2s;
+}
+
+.btn-retry:hover {
+    background: #333;
+}
+
