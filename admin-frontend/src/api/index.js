@@ -44,7 +44,8 @@ api.interceptors.response.use(
 // Admin Auth APIs
 export const adminAuthAPI = {
     login: (data) => api.post('admin/auth/login', data),
-    register: (data) => api.post('admin/auth/register', data)
+    register: (data) => api.post('admin/auth/register', data),
+    me: () => api.get('admin/auth/me')
 };
 
 // Admin Dashboard APIs

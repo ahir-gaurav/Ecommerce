@@ -10,41 +10,59 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-    const [admin, setAdmin] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [token, setToken] = useState(localStorage.getItem('admin_token'));
+    // Initialize admin state directly from localStorage so it's available on first render
+    const storedToken = localStorage.getItem('admin_token');
+    const storedAdmin = (() => {
+        try {
+            const raw = localStorage.getItem('admin_info');
+            return raw ? JSON.parse(raw) : null;
+        } catch { return null; }
+    })();
+
+    const [admin, setAdmin] = useState(storedAdmin);
+    const [token, setToken] = useState(storedToken);
+    // loading=true while we verify the token server-side on page refresh
+    const [loading, setLoading] = useState(!!storedToken);
 
     useEffect(() => {
-        if (token) {
-            // We store admin info in localStorage since there's no /me endpoint
-            const stored = localStorage.getItem('admin_info');
-            if (stored) {
-                setAdmin(JSON.parse(stored));
-            }
-        }
-        setLoading(false);
-    }, [token]);
+        if (!storedToken) { setLoading(false); return; }
+        adminAuthAPI.me()
+            .then(res => {
+                const freshAdmin = res.data.admin;
+                localStorage.setItem('admin_info', JSON.stringify(freshAdmin));
+                setAdmin(freshAdmin);
+                setToken(storedToken);
+            })
+            .catch(() => {
+                // Token expired or invalid — clear everything
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_info');
+                setToken(null);
+                setAdmin(null);
+            })
+            .finally(() => setLoading(false));
+    }, []); // only on mount
 
     const login = async (email, password) => {
         const response = await adminAuthAPI.login({ email, password });
-        const { token, admin } = response.data;
+        const { token: newToken, admin: newAdmin } = response.data;
 
-        localStorage.setItem('admin_token', token);
-        localStorage.setItem('admin_info', JSON.stringify(admin));
-        setToken(token);
-        setAdmin(admin);
+        localStorage.setItem('admin_token', newToken);
+        localStorage.setItem('admin_info', JSON.stringify(newAdmin));
+        setToken(newToken);
+        setAdmin(newAdmin);
 
         return response.data;
     };
 
     const register = async (data) => {
         const response = await adminAuthAPI.register(data);
-        const { token, admin } = response.data;
+        const { token: newToken, admin: newAdmin } = response.data;
 
-        localStorage.setItem('admin_token', token);
-        localStorage.setItem('admin_info', JSON.stringify(admin));
-        setToken(token);
-        setAdmin(admin);
+        localStorage.setItem('admin_token', newToken);
+        localStorage.setItem('admin_info', JSON.stringify(newAdmin));
+        setToken(newToken);
+        setAdmin(newAdmin);
 
         return response.data;
     };
@@ -59,7 +77,8 @@ export const AuthProvider = ({ children }) => {
     const value = {
         admin,
         loading,
-        isAuthenticated: !!admin && !!token,
+        // isAuthenticated: token exists AND admin info is loaded
+        isAuthenticated: !!token && !!admin,
         login,
         register,
         logout

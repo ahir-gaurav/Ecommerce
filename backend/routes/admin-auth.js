@@ -2,8 +2,22 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import Admin from '../models/Admin.js';
+import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Get current admin profile (verify session)
+router.get('/me', verifyToken, async (req, res) => {
+    try {
+        const admin = await Admin.findById(req.user.id).select('-password');
+        if (!admin || !admin.isActive) {
+            return res.status(401).json({ success: false, message: 'Admin not found or inactive' });
+        }
+        res.json({ success: true, admin: { id: admin._id, name: admin.name, email: admin.email, role: admin.role } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to get admin profile' });
+    }
+});
 
 // Admin login
 router.post('/login', [
