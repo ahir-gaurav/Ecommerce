@@ -1,0 +1,84 @@
+{
+  "productsIndexes": [
+    {
+      "v": 2,
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_"
+    },
+    {
+      "v": 2,
+      "key": {
+        "_fts": "text",
+        "_ftsx": 1
+      },
+      "name": "name_text_description_text",
+      "background": true,
+      "weights": {
+        "description": 1,
+        "name": 1
+      },
+      "default_language": "english",
+      "language_override": "language",
+      "textIndexVersion": 3
+    },
+    {
+      "v": 2,
+      "key": {
+        "isActive": 1,
+        "createdAt": -1
+      },
+      "name": "isActive_1_createdAt_-1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "variants.sku": 1
+      },
+      "name": "variants.sku_1",
+      "background": true,
+      "unique": true
+    }
+  ],
+  "productsCount": 4,
+  "heroSlidesCount": 2,
+  "duplicates": [],
+  "heroSlides": [
+    {
+      "_id": "69a8fc77a7b7b29bc098beb2",
+      "title": "Keep Your Kicks Fresh",
+      "subtitle": "",
+      "ctaText": "Shop Now",
+      "ctaLink": "/products",
+      "image": "https://res.cloudinary.com/dammbdjqg/image/upload/v1772682358/kicks-dont-stink/hero/eyliqafz4w1tdh3updoe.png",
+      "imagePublicId": "kicks-dont-stink/hero/eyliqafz4w1tdh3updoe",
+      "bgColor": "#f5f0eb",
+      "textPosition": "right",
+      "order": 0,
+      "isActive": true,
+      "createdAt": "2026-03-05T03:45:59.446Z",
+      "updatedAt": "2026-03-05T05:00:02.305Z",
+      "__v": 0,
+      "badgeText": "New Arrival"
+    },
+    {
+      "_id": "69a90111a7b7b29bc098bedd",
+      "title": "50% OFF",
+      "subtitle": "",
+      "ctaText": "Shop Now",
+      "ctaLink": "/products",
+      "image": "https://res.cloudinary.com/dammbdjqg/image/upload/v1772683535/kicks-dont-stink/hero/hy0abum8zvekg2k3gscy.jpg",
+      "imagePublicId": "kicks-dont-stink/hero/hy0abum8zvekg2k3gscy",
+      "bgColor": "#f5f0eb",
+      "textPosition": "right",
+      "order": 1,
+      "isActive": true,
+      "createdAt": "2026-03-05T04:05:37.903Z",
+      "updatedAt": "2026-03-05T05:02:57.833Z",
+      "__v": 0,
+      "badgeText": "New Arrival"
+    }
+  ]
+}

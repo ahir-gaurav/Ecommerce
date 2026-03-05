@@ -28,6 +28,7 @@ export default function HeroSlider() {
                 if (apiSlides.length > 0) {
                     setSlides(apiSlides.map(s => ({
                         ...s,
+                        bg: s.bg || s.bgColor || '#D6F2FF',
                         headline: s.headline || s.title || '',
                         badgeText: s.badgeText || s.subtitle || '',
                         cta: s.cta || s.ctaText || 'Shop Now →',

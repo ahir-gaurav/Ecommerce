@@ -68,15 +68,17 @@ const heroSlideSchema = new mongoose.Schema({
  * Ensure 'title' <-> 'headline' and 'bg' <-> 'bgColor' are always in sync.
  */
 heroSlideSchema.pre('save', function (next) {
-    if (this.headline && !this.title) {
+    // Always keep headline and title in sync
+    if (this.headline !== undefined) {
         this.title = this.headline;
-    } else if (this.title && !this.headline) {
+    } else if (this.title !== undefined) {
         this.headline = this.title;
     }
 
-    if (this.bg && !this.bgColor) {
+    // Always keep bg and bgColor in sync
+    if (this.bg !== undefined) {
         this.bgColor = this.bg;
-    } else if (this.bgColor && !this.bg) {
+    } else if (this.bgColor !== undefined) {
         this.bg = this.bgColor;
     }
     next();
@@ -89,20 +91,19 @@ heroSlideSchema.pre('save', function (next) {
  */
 heroSlideSchema.pre('findOneAndUpdate', function (next) {
     const update = this.getUpdate();
-    // Handle both $set: { ... } and direct { ... } updates
     const data = update.$set || update;
 
-    // Sync headline <-> title
-    if (data.headline && !data.title) {
+    // Always keep headline and title in sync
+    if (data.headline !== undefined) {
         data.title = data.headline;
-    } else if (data.title && !data.headline) {
+    } else if (data.title !== undefined) {
         data.headline = data.title;
     }
 
-    // Sync bg <-> bgColor (ISSUE 2 FIX)
-    if (data.bg && !data.bgColor) {
+    // Always keep bg and bgColor in sync
+    if (data.bg !== undefined) {
         data.bgColor = data.bg;
-    } else if (data.bgColor && !data.bg) {
+    } else if (data.bgColor !== undefined) {
         data.bg = data.bgColor;
     }
     next();

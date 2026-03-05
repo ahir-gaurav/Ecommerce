@@ -101,7 +101,8 @@ export const tickerAPI = {
     getAllAdmin: () => api.get('tickers/admin'),
     create: (data) => api.post('tickers', data),
     update: (id, data) => api.put(`tickers/${id}`, data),
-    delete: (id) => api.delete(`tickers/${id}`)
+    delete: (id) => api.delete(`tickers/${id}`),
+    reorder: (items) => api.put('tickers/reorder', { items })
 };
 
 // Coupon APIs
@@ -110,6 +111,7 @@ export const couponAPI = {
     create: (data) => api.post('coupons', data),
     update: (id, data) => api.put(`coupons/${id}`, data),
     delete: (id) => api.delete(`coupons/${id}`),
+    toggleActive: (id) => api.patch(`coupons/${id}/toggle`),
     validate: (data) => api.post('coupons/validate', data)
 };
 

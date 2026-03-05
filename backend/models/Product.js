@@ -138,6 +138,19 @@ productSchema.pre('save', function (next) {
 productSchema.index({ name: 'text', description: 'text' });
 productSchema.index({ isActive: 1, createdAt: -1 });
 
+// Boot-time cleanup: drop stale variant.sku unique index if it exists
+productSchema.on('index', async function () {
+    try {
+        const Product = mongoose.model('Product');
+        const indexes = await Product.collection.indexes();
+        const staleSku = indexes.find(i => i.key?.['variants.sku'] && i.unique);
+        if (staleSku) {
+            await Product.collection.dropIndex(staleSku.name);
+            console.log('🗑️ Dropped stale variants.sku unique index');
+        }
+    } catch (_) { /* index doesn't exist, nothing to do */ }
+});
+
 const Product = mongoose.model('Product', productSchema);
 
 export default Product;

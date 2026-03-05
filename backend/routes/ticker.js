@@ -26,6 +26,21 @@ router.get('/admin', verifyToken, requireAdmin, async (req, res) => {
     }
 });
 
+// Bulk reorder ticker items (admin only)
+router.put('/reorder', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const { items } = req.body; // [{ id, order }]
+        const ops = items.map(item =>
+            Ticker.findByIdAndUpdate(item.id, { order: item.order })
+        );
+        await Promise.all(ops);
+        const tickers = await Ticker.find().sort({ order: 1 });
+        res.json({ success: true, tickers });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to reorder ticker items' });
+    }
+});
+
 // Create ticker item (admin only)
 router.post('/', verifyToken, requireAdmin, async (req, res) => {
     try {

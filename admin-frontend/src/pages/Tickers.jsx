@@ -22,7 +22,7 @@ function Tickers() {
             const res = await tickerAPI.getAllAdmin();
             setTickers(res.data.tickers);
         } catch (err) {
-            setError('Failed to load ticker items');
+            setError(err.response?.data?.message || 'Failed to load ticker items. Check your admin session.');
         } finally {
             setLoading(false);
         }
@@ -80,7 +80,26 @@ function Tickers() {
             setSuccess(`Ticker ${ticker.isActive ? 'deactivated' : 'activated'}`);
             fetchTickers();
         } catch (err) {
-            setError('Failed to update ticker status');
+            setError(err.response?.data?.message || 'Failed to update ticker status');
+        }
+    };
+
+    const handleMove = async (index, direction) => {
+        const updated = [...tickers];
+        const swapIndex = index + direction;
+        if (swapIndex < 0 || swapIndex >= updated.length) return;
+        // Swap order values
+        const tempOrder = updated[index].order;
+        updated[index].order = updated[swapIndex].order;
+        updated[swapIndex].order = tempOrder;
+        // Optimistically update UI
+        [updated[index], updated[swapIndex]] = [updated[swapIndex], updated[index]];
+        setTickers(updated);
+        try {
+            await tickerAPI.reorder(updated.map((t, i) => ({ id: t._id, order: i })));
+        } catch (err) {
+            setError('Failed to reorder. Refreshing...');
+            fetchTickers();
         }
     };
 
@@ -128,7 +147,7 @@ function Tickers() {
                                         No ticker items yet. Add your first announcement!
                                     </td>
                                 </tr>
-                            ) : tickers.map(ticker => (
+                            ) : tickers.map((ticker, index) => (
                                 <tr key={ticker._id}>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -149,6 +168,18 @@ function Tickers() {
                                     </td>
                                     <td>
                                         <div className="flex gap-8">
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => handleMove(index, -1)}
+                                                disabled={index === 0}
+                                                title="Move up"
+                                            >↑</button>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => handleMove(index, 1)}
+                                                disabled={index === tickers.length - 1}
+                                                title="Move down"
+                                            >↓</button>
                                             <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(ticker)}>Edit</button>
                                             <button className="btn btn-danger btn-sm" onClick={() => handleDelete(ticker._id)}>Delete</button>
                                         </div>

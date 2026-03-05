@@ -149,6 +149,23 @@ router.put('/:id', verifyToken, requireAdmin, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ADMIN — Toggle coupon active status
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch('/:id/toggle', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const coupon = await Coupon.findById(req.params.id);
+        if (!coupon) {
+            return res.status(404).json({ success: false, message: 'Coupon not found' });
+        }
+        coupon.isActive = !coupon.isActive;
+        await coupon.save();
+        res.json({ success: true, coupon });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to toggle coupon status' });
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ADMIN — Delete coupon
 // ─────────────────────────────────────────────────────────────────────────────
 router.delete('/:id', verifyToken, requireAdmin, async (req, res) => {

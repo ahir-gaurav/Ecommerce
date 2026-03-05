@@ -31,7 +31,7 @@ function Coupons() {
             const res = await couponAPI.getAll();
             setCoupons(res.data.coupons);
         } catch (err) {
-            setError('Failed to load coupons');
+            setError(err.response?.data?.message || 'Failed to load coupons. Check your admin session.');
         } finally {
             setLoading(false);
         }
@@ -95,11 +95,11 @@ function Coupons() {
 
     const handleToggleActive = async (coupon) => {
         try {
-            await couponAPI.update(coupon._id, { ...coupon, isActive: !coupon.isActive });
+            await couponAPI.toggleActive(coupon._id);
             setSuccess(`Coupon ${coupon.isActive ? 'deactivated' : 'activated'}`);
             fetchCoupons();
         } catch (err) {
-            setError('Failed to update coupon status');
+            setError(err.response?.data?.message || 'Failed to update coupon status');
         }
     };
 
