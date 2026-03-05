@@ -86,7 +86,7 @@ function HeroSection() {
 
     const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 
-    useEffect(() => { fetchSlides(); }, []);
+    useEffect(() => { fetchSlides(true); }, []);
 
     useEffect(() => {
         if (success) { const t = setTimeout(() => setSuccess(''), 3000); return () => clearTimeout(t); }
@@ -108,7 +108,7 @@ function HeroSection() {
         if (slide) {
             setEditingId(slide._id);
             setFormData({
-                bg: slide.bg || '#D6F2FF',
+                bg: slide.bg || slide.bgColor || '#D6F2FF',
                 badgeText: slide.badgeText || '',
                 // Read headline first, fall back to title for legacy slides
                 headline: slide.headline || slide.title || '',
@@ -304,7 +304,7 @@ function HeroSection() {
                                     <tr key={s._id}>
                                         <td style={{ fontWeight: 700 }}>{s.order}</td>
                                         <td>
-                                            <div style={{ width: 80, height: 50, borderRadius: 4, background: s.bg || '#eee', overflow: 'hidden' }}>
+                                            <div style={{ width: 80, height: 50, borderRadius: 4, background: s.bg || s.bgColor || '#eee', overflow: 'hidden' }}>
                                                 {s.image && (
                                                     <img
                                                         src={s.image.startsWith('http') ? s.image : `${API_BASE}${s.image}`}

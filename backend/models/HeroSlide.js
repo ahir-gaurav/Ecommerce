@@ -18,6 +18,11 @@ const heroSlideSchema = new mongoose.Schema({
         default: '#D6F2FF',
         trim: true,
     },
+    // ALIAS FOR BACKWARD COMPATIBILITY
+    bgColor: {
+        type: String,
+        trim: true,
+    },
     badgeText: {
         type: String,
         default: 'SPF 50 | PA++++',
@@ -60,16 +65,19 @@ const heroSlideSchema = new mongoose.Schema({
 
 /**
  * Super Senior Middleware:
- * Ensure 'title' and 'headline' are always in sync.
- * If one is updated, the other follows. This prevents "Title is required"
- * validation errors even if the MongoDB collection has strict validation enabled
- * or if legacy code is still checking for 'title'.
+ * Ensure 'title' <-> 'headline' and 'bg' <-> 'bgColor' are always in sync.
  */
 heroSlideSchema.pre('save', function (next) {
     if (this.headline && !this.title) {
         this.title = this.headline;
     } else if (this.title && !this.headline) {
         this.headline = this.title;
+    }
+
+    if (this.bg && !this.bgColor) {
+        this.bgColor = this.bg;
+    } else if (this.bgColor && !this.bg) {
+        this.bg = this.bgColor;
     }
     next();
 });
