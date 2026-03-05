@@ -61,6 +61,15 @@ const productSchema = new mongoose.Schema({
         required: true,
         min: 0
     },
+    brand: {
+        type: String,
+        default: 'Kicks Don\'t Stink'
+    },
+    sku: {
+        type: String,
+        unique: true,
+        sparse: true // Allow products without a top-level SKU if variants are used
+    },
     images: [{
         url: String,
         publicId: String,
@@ -86,6 +95,10 @@ const productSchema = new mongoose.Schema({
         compostable: { type: Boolean, default: true }
     },
     variants: [variantSchema],
+    totalStock: {
+        type: Number,
+        default: 0
+    },
     averageRating: {
         type: Number,
         default: 0,
@@ -110,9 +123,15 @@ const productSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// Calculate total stock across all variants
-productSchema.virtual('totalStock').get(function () {
-    return this.variants.reduce((sum, variant) => sum + variant.stock, 0);
+// Middleware to calculate total stock across all variants before saving
+productSchema.pre('save', function (next) {
+    if (this.variants && this.variants.length > 0) {
+        this.totalStock = this.variants.reduce((sum, variant) => sum + (variant.stock || 0), 0);
+    } else {
+        // If no variants, totalStock might be manually set or default to 0
+        // We only overwrite if there are variants present
+    }
+    next();
 });
 
 // Index for search and filtering

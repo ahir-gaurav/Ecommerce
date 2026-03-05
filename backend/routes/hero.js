@@ -73,14 +73,20 @@ router.put('/:id', verifyToken, requireAdmin, (req, res) => {
     uploadHero(req, res, async (err) => {
         if (err) return res.status(400).json({ success: false, message: err.message });
         try {
-            const { order, bg, badgeText, headline, title, cta, isActive } = req.body;
+            const { order, bg, backgroundColor, badgeText, headline, title, cta, isActive } = req.body;
+            console.log('[Hero] Updating slide:', req.params.id, { bg, backgroundColor, headline });
+
             const updateData = {};
 
             if (order !== undefined) updateData.order = parseInt(order);
+
+            // Handle both 'bg' and 'backgroundColor' for robustness
             if (bg !== undefined) updateData.bg = bg;
+            else if (backgroundColor !== undefined) updateData.bg = backgroundColor;
+
             if (badgeText !== undefined) updateData.badgeText = badgeText;
-            if (headline !== undefined) {
-                updateData.headline = headline;
+            if (headline !== undefined || title !== undefined) {
+                updateData.headline = headline || title;
                 updateData.title = title || headline;
             }
             if (cta !== undefined) updateData.cta = cta;
@@ -97,8 +103,11 @@ router.put('/:id', verifyToken, requireAdmin, (req, res) => {
 
             const slide = await HeroSlide.findByIdAndUpdate(req.params.id, { $set: updateData }, { new: true });
             if (!slide) return res.status(404).json({ success: false, message: 'Slide not found' });
+
+            console.log('[Hero] Slide updated successfully:', slide._id);
             res.json({ success: true, slide });
         } catch (err) {
+            console.error('[Hero] Update error:', err);
             res.status(500).json({ success: false, message: err.message });
         }
     });

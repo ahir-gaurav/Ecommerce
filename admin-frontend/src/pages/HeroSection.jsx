@@ -92,15 +92,15 @@ function HeroSection() {
         if (success) { const t = setTimeout(() => setSuccess(''), 3000); return () => clearTimeout(t); }
     }, [success]);
 
-    const fetchSlides = async () => {
+    const fetchSlides = async (isInitial = false) => {
         try {
-            setLoading(true);
+            if (isInitial) setLoading(true);
             const res = await heroAPI.getAll();
             setSlides(res.data.slides || []);
         } catch (err) {
             setError('Failed to load hero slides');
         } finally {
-            setLoading(false);
+            if (isInitial) setLoading(false);
         }
     };
 

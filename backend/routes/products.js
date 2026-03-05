@@ -36,28 +36,43 @@ router.get('/:id', async (req, res) => {
 // Create product (admin only)
 router.post('/', verifyToken, requireAdmin, async (req, res) => {
     try {
-        const body = { ...req.body };
+        const { name, description, category, brand, basePrice, sku, ...rest } = req.body;
 
-        // Ensure basePrice is a valid number
-        if (body.basePrice !== undefined) {
-            body.basePrice = parseFloat(body.basePrice);
-            if (isNaN(body.basePrice)) {
-                return res.status(400).json({ success: false, message: 'Base price must be a valid number' });
-            }
+        console.log('[Products] Creating product:', { name, brand, sku, basePrice });
+
+        // Build product data with explicit parsing
+        const productData = {
+            name,
+            description,
+            category: category || 'Eco-Friendly Home Care',
+            brand: brand || 'Kicks Don\'t Stink',
+            basePrice: parseFloat(basePrice) || 0,
+            sku: sku || undefined, // Only set if provided
+            ...rest
+        };
+
+        // Basic validation check before Mongoose
+        if (!name || !description) {
+            return res.status(400).json({ success: false, message: 'Name and Description are required' });
         }
 
-        const product = await Product.create(body);
+        const product = await Product.create(productData);
+
+        console.log('[Products] Product created successfully:', product._id);
         res.status(201).json({ success: true, product });
     } catch (error) {
         console.error('Product create error:', error);
-        // Return full validation error details
+
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(e => e.message).join(', ');
             return res.status(400).json({ success: false, message: messages });
         }
         if (error.code === 11000) {
-            const field = Object.keys(error.keyValue || {})[0] || 'field';
-            return res.status(400).json({ success: false, message: `Duplicate value for ${field}. Please use a unique value.` });
+            const field = Object.keys(error.keyValue || {})[0] || 'SKU';
+            return res.status(400).json({
+                success: false,
+                message: `Duplicate value for ${field}. Please use a unique value.`
+            });
         }
         res.status(500).json({ success: false, message: error.message || 'Failed to create product' });
     }

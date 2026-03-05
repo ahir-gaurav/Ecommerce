@@ -17,7 +17,8 @@ function Products() {
         name: 'Kicks Don\'t Stink - Eco Shoe Deodoriser',
         description: 'A sustainable, biodegradable, reusable shoe deodoriser made from activated bamboo charcoal, cedar shavings, and lavender buds.',
         category: 'Eco-Friendly Home Care',
-        basePrice: '',
+        brand: 'Kicks Don\'t Stink',
+        basePrice: 0,
     };
 
     const emptyVariant = {
@@ -36,18 +37,19 @@ function Products() {
     const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
-        fetchProducts();
+        fetchProducts(true);
         fetchFragrances();
     }, []);
 
-    const fetchProducts = async () => {
+    const fetchProducts = async (isInitial = false) => {
         try {
+            if (isInitial) setLoading(true);
             const res = await productAPI.getAll();
             setProducts(res.data.products);
         } catch (err) {
             setError('Failed to load products');
         } finally {
-            setLoading(false);
+            if (isInitial) setLoading(false);
         }
     };
 
@@ -166,6 +168,7 @@ function Products() {
             name: product.name,
             description: product.description,
             category: product.category,
+            brand: product.brand || '',
             basePrice: product.basePrice,
         });
         setShowModal(true);
@@ -187,14 +190,19 @@ function Products() {
         setSaving(true);
         setError('');
         try {
-            await productAPI.addVariant(selectedProduct._id, variantForm);
-            setSuccess('Variant added successfully');
-            setShowVariantModal(false);
-            setVariantForm(emptyVariant);
-            fetchProducts();
+            const res = await productAPI.addVariant(selectedProduct._id, variantForm);
+            if (res.data.success) {
+                setSuccess('Variant added successfully');
+                setShowVariantModal(false);
+                setVariantForm(emptyVariant);
+                // The API returns updatedProduct — we can update locally immediately
+                const updatedProduct = res.data.updatedProduct;
+                setProducts(prev => prev.map(p => p._id === updatedProduct._id ? updatedProduct : p));
+                // fetchProducts in background just in case
+                fetchProducts(false);
+            }
         } catch (err) {
             const msg = err.response?.data?.message || err.message || 'Failed to add variant';
-            const detail = err.response?.data?.error ? `: ${msg}` : '';
             setError(msg);
             console.error('Variant add error:', err.response?.data || err);
         } finally {
@@ -239,6 +247,7 @@ function Products() {
                             <tr>
                                 <th>Product</th>
                                 <th>Category</th>
+                                <th>Brand</th>
                                 <th>Base Price</th>
                                 <th>Variants</th>
                                 <th>Total Stock</th>
@@ -248,7 +257,7 @@ function Products() {
                         </thead>
                         <tbody>
                             {products.length === 0 ? (
-                                <tr><td colSpan="7" style={{ textAlign: 'center', padding: 40 }} className="text-muted">No products found. Add your first product!</td></tr>
+                                <tr><td colSpan="8" style={{ textAlign: 'center', padding: 40 }} className="text-muted">No products found. Add your first product!</td></tr>
                             ) : products.map(product => (
                                 <tr key={product._id}>
                                     <td>
@@ -269,6 +278,7 @@ function Products() {
                                         </div>
                                     </td>
                                     <td>{product.category}</td>
+                                    <td>{product.brand}</td>
                                     <td>₹{product.basePrice}</td>
                                     <td>{product.variants?.length || 0}</td>
                                     <td>
@@ -323,8 +333,12 @@ function Products() {
                                     <input type="text" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
                                 </div>
                                 <div className="form-group">
+                                    <label>Brand</label>
+                                    <input type="text" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
+                                </div>
+                                <div className="form-group">
                                     <label>Base Price (₹)</label>
-                                    <input type="number" value={form.basePrice} onChange={(e) => setForm({ ...form, basePrice: parseFloat(e.target.value) })} required min="0" />
+                                    <input type="number" value={form.basePrice} onChange={(e) => setForm({ ...form, basePrice: parseFloat(e.target.value) || 0 })} required min="0" />
                                 </div>
                             </div>
                             <div className="modal-actions">
