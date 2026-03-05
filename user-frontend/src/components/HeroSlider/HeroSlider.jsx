@@ -5,8 +5,6 @@ import './HeroSlider.css';
 
 const FALLBACK_SLIDE = { bg: '#D6F2FF', badgeText: 'Welcome', headline: 'Discover Our\nCollection', cta: 'Shop Now →', image: '' };
 
-const DURATION = 4000;
-
 export default function HeroSlider() {
     const navigate = useNavigate();
     const [slides, setSlides] = useState([FALLBACK_SLIDE]);
@@ -68,7 +66,6 @@ export default function HeroSlider() {
                     <div
                         key={i}
                         className={`hs2-slide${i === current ? ' hs2-slide--active' : ''}`}
-                        style={{ '--slide-bg': slide.bg }}
                     >
                         <div className="hs2-slide__img-col">
                             {slide.image ? (
@@ -82,7 +79,7 @@ export default function HeroSlider() {
                             )}
                         </div>
 
-                        <div className="hs2-slide__content">
+                        <div className="hs2-slide__content" style={{ '--slide-bg': slide.bg }}>
                             {slide.badgeText && (
                                 <span className="hs2-badge">{slide.badgeText}</span>
                             )}
