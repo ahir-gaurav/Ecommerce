@@ -66,6 +66,21 @@ function Products() {
         }
     };
 
+    // ── Auto-generate SKU from Type + Size + Fragrance ─────────────
+    const buildSKU = (type, size, fragrance) => {
+        const t = (type || 'STD').substring(0, 3).toUpperCase();
+        const s = (size || 'M').substring(0, 1).toUpperCase();
+        const f = (fragrance || 'UNS').substring(0, 4).toUpperCase().replace(/\s+/g, '');
+        return `KDS-${t}-${s}-${f}`;
+    };
+
+    useEffect(() => {
+        // Auto-update SKU whenever Type, Size, or Fragrance changes
+        const generatedSKU = buildSKU(variantForm.type, variantForm.size, variantForm.fragrance);
+        setVariantForm(v => ({ ...v, sku: generatedSKU }));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [variantForm.type, variantForm.size, variantForm.fragrance]);
+
     // Returns a usable image src — handles both Cloudinary (http) and local (/uploads) URLs
     const getImageSrc = (url) => {
         if (!url) return '';
@@ -413,8 +428,15 @@ function Products() {
                             </div>
                             <div className="form-row-3">
                                 <div className="form-group">
-                                    <label>SKU</label>
-                                    <input type="text" value={variantForm.sku} onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })} required placeholder="KDS-STD-M-LAV" />
+                                    <label>SKU <span style={{ fontSize: '11px', color: '#888', fontWeight: 400 }}>(auto-generated, editable)</span></label>
+                                    <input
+                                        type="text"
+                                        value={variantForm.sku}
+                                        onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
+                                        required
+                                        placeholder="Auto-generated"
+                                        style={{ fontFamily: 'monospace' }}
+                                    />
                                 </div>
                                 <div className="form-group">
                                     <label>Price Adjustment (₹)</label>
