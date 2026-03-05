@@ -110,10 +110,11 @@ function HeroSection() {
             setFormData({
                 bg: slide.bg || '#D6F2FF',
                 badgeText: slide.badgeText || '',
-                headline: slide.headline || '',
+                // Read headline first, fall back to title for legacy slides
+                headline: slide.headline || slide.title || '',
                 cta: slide.cta || 'Shop Now →',
                 isActive: slide.isActive ?? true,
-                order: slide.order || 0
+                order: slide.order ?? 0
             });
             setPreviewUrl(slide.image ? (slide.image.startsWith('http') ? slide.image : `${API_BASE}${slide.image}`) : '');
         } else {
@@ -149,8 +150,10 @@ function HeroSection() {
 
         const fd = new FormData();
         Object.keys(formData).forEach(key => fd.append(key, formData[key]));
-        fd.append('title', formData.headline); // Explicit sync for legacy-hardened backends
+        fd.append('title', formData.headline); // keep title in sync with headline for legacy
         if (selectedFile) fd.append('image', selectedFile);
+
+        console.log('[HeroSection] Saving slide:', editingId || 'NEW', Object.fromEntries(fd));
 
         try {
             if (editingId) {
@@ -161,7 +164,7 @@ function HeroSection() {
                 setSuccess('New slide created successfully');
             }
             setShowForm(false);
-            fetchSlides();
+            await fetchSlides(); // await so fresh data is loaded before user re-opens form
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to save slide');
         } finally {
