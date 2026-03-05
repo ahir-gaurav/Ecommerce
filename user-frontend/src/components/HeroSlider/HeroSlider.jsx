@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { heroAPI } from '../../api';
 import './HeroSlider.css';
 
-const FALLBACK_SLIDE = { bg: '#D6F2FF', badgeText: 'Welcome', headline: 'Discover Our\nCollection', cta: 'Shop Now →', image: '' };
+const FALLBACK_SLIDE = { bg: '#D6F2FF', badgeText: '', headline: 'Discover Our\nCollection', cta: 'Shop Now →', image: '' };
+const DURATION = 4000;
 
 export default function HeroSlider() {
     const navigate = useNavigate();
@@ -12,8 +13,13 @@ export default function HeroSlider() {
     const [paused, setPaused] = useState(false);
     const [fillKey, setFillKey] = useState(0);
 
+    // Keep a ref to latest slides count so the timer never uses a stale closure
+    const slidesLenRef = useRef(1);
+    useEffect(() => { slidesLenRef.current = slides.length; }, [slides]);
+
     const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 
+    // ── Fetch slides from API ──────────────────────────────────
     useEffect(() => {
         heroAPI.getSlides()
             .then(res => {
@@ -22,51 +28,60 @@ export default function HeroSlider() {
                     setSlides(apiSlides.map(s => ({
                         ...s,
                         headline: s.headline || s.title || '',
-                        badgeText: s.badgeText || s.subtitle || '', // Support multiple backend field names
-                        cta: s.cta || s.ctaText || 'Shop Now →',   // Support multiple backend field names
-                        image: s.image ? (s.image.startsWith('http') ? s.image : `${API_BASE}${s.image}`) : ''
+                        badgeText: s.badgeText || s.subtitle || '',
+                        cta: s.cta || s.ctaText || 'Shop Now →',
+                        image: s.image
+                            ? (s.image.startsWith('http') ? s.image : `${API_BASE}${s.image}`)
+                            : ''
                     })));
                 }
             })
             .catch(err => console.error('Failed to fetch hero slides:', err));
     }, [API_BASE]);
 
-    const goToNext = useCallback(() => {
-        if (slides.length <= 1) return;
-        setCurrent(c => (c + 1) % slides.length);
-    }, [slides.length]);
+    // ── Auto-advance timer ────────────────────────────────────
+    //  - Uses setTimeout (not CSS animationEnd) — reliable across all browsers
+    //  - Cleared and restarted on every slide change or pause toggle
+    //  - Uses slidesLenRef to avoid stale-closure bugs
+    useEffect(() => {
+        if (paused || slides.length <= 1) return;
 
-    /* ── Reset fill bar whenever slide or data changes ───────── */
+        const id = setTimeout(() => {
+            setCurrent(c => (c + 1) % slidesLenRef.current);
+        }, DURATION);
+
+        return () => clearTimeout(id);
+    }, [current, paused, slides.length]);   // deps reset the timer on every change
+
+    // ── Reset fill bar on slide change ────────────────────────
+    //  The CSS animation is purely cosmetic — it does NOT drive slide changes.
+    //  Bumping fillKey mounts a fresh <span> so the animation restarts cleanly.
     useEffect(() => {
         setFillKey(k => k + 1);
-    }, [current, slides.length]);
+    }, [current]);
 
-    /* ── Navigation helpers ──────────────────────────────────── */
+    // ── Navigation helpers ────────────────────────────────────
     const goTo = useCallback((i) => { setCurrent(i); }, []);
 
-    // On mouse-leave we also bump fillKey so the bar resets in
-    // sync with the freshly-restarted 4-second timer.
     const handleMouseLeave = useCallback(() => {
         setPaused(false);
-        // fillKey bump is handled by the useEffect above if we wanted to restart, 
-        // but here we just let the animation resume or restart by bumping key
-        setFillKey(k => k + 1);
+        setFillKey(k => k + 1);   // restart fill bar from 0 when hover ends
     }, []);
 
-    /* ── Render ─────────────────────────────────────────────── */
+    // ── Render ────────────────────────────────────────────────
     return (
         <section
             className="hs2-root"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={handleMouseLeave}
         >
-            {/* Slides */}
             <div className="hs2-track">
                 {slides.map((slide, i) => (
                     <div
                         key={i}
                         className={`hs2-slide${i === current ? ' hs2-slide--active' : ''}`}
                     >
+                        {/* Left panel — image */}
                         <div className="hs2-slide__img-col">
                             {slide.image ? (
                                 <img
@@ -79,6 +94,7 @@ export default function HeroSlider() {
                             )}
                         </div>
 
+                        {/* Right panel — text */}
                         <div className="hs2-slide__content" style={{ '--slide-bg': slide.bg }}>
                             {slide.badgeText && (
                                 <span className="hs2-badge">{slide.badgeText}</span>
@@ -99,7 +115,7 @@ export default function HeroSlider() {
                 ))}
             </div>
 
-            {/* Dash-bar progress indicator */}
+            {/* Progress indicator — purely visual, NOT driving slide changes */}
             <div className="hs2-bars">
                 {slides.map((_, i) => {
                     const state = i < current ? 'past' : i === current ? 'active' : 'future';
@@ -113,14 +129,8 @@ export default function HeroSlider() {
                             {state === 'active' && (
                                 <span
                                     key={fillKey}
-                                    /**
-                                     * NO onAnimationEnd — the timer (setTimeout) drives
-                                     * slide advancement, not the CSS animation.
-                                     * The fill span is pure visual decoration.
-                                     * paused class freezes it in place while hovered.
-                                     */
                                     className={`hs2-bar__fill${paused ? ' hs2-bar__fill--paused' : ''}`}
-                                    onAnimationEnd={goToNext}
+                                /* NO onAnimationEnd here — setTimeout is the source of truth */
                                 />
                             )}
                         </button>
