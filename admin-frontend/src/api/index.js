@@ -70,11 +70,9 @@ export const productAPI = {
 // Hero Section APIs
 export const heroAPI = {
     getAll: () => api.get('hero/all'),
-    saveSlide: (index, fd) => {
-        // slideIndex is already appended in the component for better ordering
-        return api.post('hero', fd);
-    },
-    removeImage: (index) => api.delete(`hero/image?slideIndex=${index}`),
+    create: (fd) => api.post('hero', fd),
+    update: (id, fd) => api.put(`hero/${id}`, fd),
+    delete: (id) => api.delete(`hero/${id}`),
 };
 
 // Order APIs

@@ -9,12 +9,9 @@ import mongoose from 'mongoose';
  * A pre-save hook ensures these stay in sync so legacy code never errors.
  */
 const heroSlideSchema = new mongoose.Schema({
-    slideIndex: {
+    order: {
         type: Number,
-        required: true,
-        min: 0,
-        max: 2,
-        unique: true,
+        default: 0,
     },
     bg: {
         type: String,

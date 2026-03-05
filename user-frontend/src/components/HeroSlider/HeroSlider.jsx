@@ -3,43 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import { heroAPI } from '../../api';
 import './HeroSlider.css';
 
-const BASE_SLIDES = [
-    { bg: '#D6F2FF', badgeText: 'SPF 50 | PA++++', headline: 'Shield Your Skin\nThis Summer', cta: 'Shop Now →', image: '' },
-    { bg: '#FFF3EC', badgeText: 'FREE Kit on orders above ₹599', headline: 'Your Routine,\nAnywhere', cta: 'Shop Now →', image: '' },
-    { bg: '#F5F5F0', badgeText: 'FREE Face Towel on orders above ₹899', headline: 'Cleanse.\nTreat. Glow.', cta: 'Shop Now →', image: '' },
-];
+const FALLBACK_SLIDE = { bg: '#D6F2FF', badgeText: 'Welcome', headline: 'Discover Our\nCollection', cta: 'Shop Now →', image: '' };
 
 const DURATION = 4000;
 
 export default function HeroSlider() {
     const navigate = useNavigate();
-    const [slides, setSlides] = useState(BASE_SLIDES);
+    const [slides, setSlides] = useState([FALLBACK_SLIDE]);
     const [current, setCurrent] = useState(0);
     const [paused, setPaused] = useState(false);
-    // fillKey increments every time the bar animation should restart from 0
     const [fillKey, setFillKey] = useState(0);
+    const [loading, setLoading] = useState(true);
 
-    /* ── Fetch slides from API (runs once) ───────────────────── */
+    const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
+
     useEffect(() => {
         heroAPI.getSlides()
             .then(res => {
-                const api = res.data.slides || [];
-                const activeApiSlides = api.filter(s => s.isActive);
-
-                if (activeApiSlides.length > 0) {
-                    setSlides(activeApiSlides.map((s, idx) => ({
-                        bg: s.bg || BASE_SLIDES[idx % BASE_SLIDES.length].bg,
-                        badgeText: s.badgeText || BASE_SLIDES[idx % BASE_SLIDES.length].badgeText,
-                        headline: s.headline || BASE_SLIDES[idx % BASE_SLIDES.length].headline,
-                        cta: s.cta || BASE_SLIDES[idx % BASE_SLIDES.length].cta,
-                        image: s.image || '',
+                const apiSlides = res.data.slides || [];
+                if (apiSlides.length > 0) {
+                    setSlides(apiSlides.map(s => ({
+                        ...s,
+                        image: s.image ? (s.image.startsWith('http') ? s.image : `${API_BASE}${s.image}`) : ''
                     })));
-                } else {
-                    setSlides(BASE_SLIDES);
                 }
             })
-            .catch(() => { /* keep defaults */ });
-    }, []);
+            .catch(err => console.error('Failed to fetch hero slides:', err))
+            .finally(() => setLoading(false));
+    }, [API_BASE]);
 
     /* ── Auto-advance timer ──────────────────────────────────────
      *  A plain setTimeout is the only reliable primitive here.
