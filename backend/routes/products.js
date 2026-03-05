@@ -110,16 +110,15 @@ router.post('/:id/variants', verifyToken, requireAdmin, async (req, res) => {
         product.variants.push(variantData);
         await product.save();
 
-        res.json({ success: true, product });
+        const newVariant = product.variants[product.variants.length - 1];
+
+        res.json({
+            success: true,
+            variant: newVariant,
+            updatedProduct: product
+        });
     } catch (error) {
         console.error('Add variant error:', error);
-
-        // Log to file for diagnostics (temporary)
-        try {
-            const fs = await import('fs');
-            const logEntry = `\n[${new Date().toISOString()}] Add variant error:\n${error.stack || error}\nBody: ${JSON.stringify(req.body)}\nParams: ${JSON.stringify(req.params)}\n---\n`;
-            fs.appendFileSync('backend/error.log', logEntry);
-        } catch (e) { console.error('Logging failed:', e); }
 
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(e => e.message).join(', ');
@@ -127,13 +126,16 @@ router.post('/:id/variants', verifyToken, requireAdmin, async (req, res) => {
         }
         if (error.code === 11000) {
             const field = Object.keys(error.keyValue || {})[0] || 'sku';
-            return res.status(400).json({ success: false, message: `Duplicate value for ${field}. Please use a unique SKU.` });
+            const val = error.keyValue ? Object.values(error.keyValue)[0] : '';
+            return res.status(400).json({
+                success: false,
+                message: `Duplicate value for ${field} (${val}). Please use a unique SKU.`,
+                error: 'DuplicateKey'
+            });
         }
         res.status(500).json({
             success: false,
             message: error.message || 'Failed to add variant',
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-            error: error
         });
     }
 });

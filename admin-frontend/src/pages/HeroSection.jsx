@@ -157,15 +157,21 @@ function HeroSection() {
 
         try {
             if (editingId) {
-                await heroAPI.update(editingId, fd);
+                const res = await heroAPI.update(editingId, fd);
+                const updatedSlide = res.data.slide;
+                setSlides(prev => prev.map(s => s._id === editingId ? updatedSlide : s));
                 setSuccess('Slide updated successfully');
             } else {
-                await heroAPI.create(fd);
+                const res = await heroAPI.create(fd);
+                const newSlide = res.data.slide;
+                setSlides(prev => [...prev, newSlide].sort((a, b) => (a.order || 0) - (b.order || 0)));
                 setSuccess('New slide created successfully');
             }
             setShowForm(false);
-            await fetchSlides(); // await so fresh data is loaded before user re-opens form
+            // Re-fetch in background to ensure perfect sync
+            fetchSlides();
         } catch (err) {
+            console.error('Save hero error:', err);
             setError(err.response?.data?.message || 'Failed to save slide');
         } finally {
             setSaving(false);
