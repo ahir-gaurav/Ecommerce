@@ -17,7 +17,8 @@ function Coupons() {
         minPurchaseAmount: 0,
         expiryDate: '',
         usageLimit: '',
-        isActive: true
+        isActive: true,
+        applicability: 'ALL_USERS'
     };
     const [form, setForm] = useState(emptyForm);
 
@@ -75,7 +76,8 @@ function Coupons() {
             minPurchaseAmount: coupon.minPurchaseAmount || 0,
             expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate).toISOString().split('T')[0] : '',
             usageLimit: coupon.usageLimit === null ? '' : coupon.usageLimit,
-            isActive: coupon.isActive
+            isActive: coupon.isActive,
+            applicability: coupon.applicability || 'ALL_USERS'
         });
         setShowModal(true);
     };
@@ -134,6 +136,7 @@ function Coupons() {
                             <tr>
                                 <th>Code</th>
                                 <th>Discount</th>
+                                <th>Applicability</th>
                                 <th>Min. Purchase</th>
                                 <th>Usage</th>
                                 <th>Expiry</th>
@@ -155,6 +158,11 @@ function Coupons() {
                                     </td>
                                     <td>
                                         {coupon.discountType === 'percentage' ? `${coupon.value}% OFF` : `₹${coupon.value} OFF`}
+                                    </td>
+                                    <td>
+                                        <span className={`badge ${coupon.applicability === 'FIRST_ORDER_ONLY' ? 'badge-pending' : 'badge-delivered'}`}>
+                                            {coupon.applicability === 'FIRST_ORDER_ONLY' ? '1st Order' : 'All Users'}
+                                        </span>
                                     </td>
                                     <td>₹{coupon.minPurchaseAmount}</td>
                                     <td className="text-sm">
@@ -252,6 +260,21 @@ function Coupons() {
                                         placeholder="Leave empty for unlimited"
                                     />
                                 </div>
+                            </div>
+                            <div className="form-group">
+                                <label>Coupon Applicability</label>
+                                <select
+                                    value={form.applicability}
+                                    onChange={(e) => setForm({ ...form, applicability: e.target.value })}
+                                >
+                                    <option value="ALL_USERS">All Users</option>
+                                    <option value="FIRST_ORDER_ONLY">First Order Only</option>
+                                </select>
+                                {form.applicability === 'FIRST_ORDER_ONLY' && (
+                                    <small style={{ color: '#f59e0b', marginTop: 4, display: 'block' }}>
+                                        ⚠️ This coupon will be rejected if the user has any previous orders
+                                    </small>
+                                )}
                             </div>
                             <div className="form-group">
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>

@@ -315,7 +315,7 @@ function HeroSection() {
                                             </div>
                                         </td>
                                         <td>
-                                            <div style={{ fontWeight: 600 }}>{s.headline || '(No headline)'}</div>
+                                            <div style={{ fontWeight: 600 }}>{s.headline || s.title || '(No headline)'}</div>
                                             <div style={{ fontSize: 11, color: '#888' }}>{s.badgeText}</div>
                                         </td>
                                         <td>

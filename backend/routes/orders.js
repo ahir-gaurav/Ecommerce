@@ -1,6 +1,7 @@
 import express from 'express';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import User from '../models/User.js';
 import { Settings } from '../models/Settings.js';
 import { verifyToken, requireAuth, requireAdmin } from '../middleware/auth.js';
 import { sendOrderConfirmation, sendAdminAlert } from '../utils/email.js';
@@ -72,6 +73,9 @@ router.post('/', verifyToken, requireAuth, async (req, res) => {
             shippingAddress,
             estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
         });
+
+        // Increment user's orderCount for first-order coupon tracking
+        await User.findByIdAndUpdate(req.currentUser._id, { $inc: { orderCount: 1 } });
 
         res.status(201).json({ success: true, order });
     } catch (error) {

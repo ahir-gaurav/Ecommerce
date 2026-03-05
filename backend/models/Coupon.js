@@ -35,6 +35,11 @@ const couponSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    applicability: {
+        type: String,
+        enum: ['ALL_USERS', 'FIRST_ORDER_ONLY'],
+        default: 'ALL_USERS'
     }
 }, { timestamps: true });
 

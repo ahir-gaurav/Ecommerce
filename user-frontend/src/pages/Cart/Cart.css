@@ -187,3 +187,120 @@
         position: static;
     }
 }
+
+/* ── Coupon Section ─────────────────────────────────────── */
+.coupon-section {
+    margin-bottom: 16px;
+}
+
+.coupon-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+    letter-spacing: 0.2px;
+}
+
+.coupon-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.coupon-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1.5px solid #e5e5e5;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.coupon-input:focus {
+    border-color: #1a1a1a;
+}
+
+.coupon-apply-btn {
+    padding: 10px 18px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+}
+
+.coupon-apply-btn:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.coupon-apply-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.coupon-error {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #c62828;
+    font-weight: 500;
+}
+
+/* Applied coupon chip */
+.coupon-applied {
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+.coupon-applied-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.coupon-tag {
+    font-size: 13px;
+    color: #166534;
+}
+
+.coupon-remove-btn {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.coupon-remove-btn:hover {
+    color: #c62828;
+}
+
+.coupon-applied-msg {
+    font-size: 12px;
+    color: #16a34a;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Discount row in summary */
+.discount-row {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.discount-row span:last-child {
+    color: #16a34a;
+}

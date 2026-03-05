@@ -24,10 +24,10 @@ function Products() {
     const emptyVariant = {
         type: 'Standard',
         size: 'Medium',
-        fragrance: '',
+        fragrance: 'Lavender',
         priceAdjustment: 0,
         stock: 0,
-        sku: ''
+        sku: 'KDS-STA-M-LAVE'
     };
 
     const [form, setForm] = useState(emptyForm);

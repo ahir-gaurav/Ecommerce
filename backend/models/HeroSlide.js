@@ -92,10 +92,18 @@ heroSlideSchema.pre('findOneAndUpdate', function (next) {
     // Handle both $set: { ... } and direct { ... } updates
     const data = update.$set || update;
 
+    // Sync headline <-> title
     if (data.headline && !data.title) {
         data.title = data.headline;
     } else if (data.title && !data.headline) {
         data.headline = data.title;
+    }
+
+    // Sync bg <-> bgColor (ISSUE 2 FIX)
+    if (data.bg && !data.bgColor) {
+        data.bgColor = data.bg;
+    } else if (data.bgColor && !data.bg) {
+        data.bg = data.bgColor;
     }
     next();
 });
