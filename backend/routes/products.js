@@ -18,14 +18,16 @@ router.get('/', async (req, res) => {
 // Get single product (public)
 router.get('/:id', async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
+        // Increment views atomically without triggering full validation
+        const product = await Product.findByIdAndUpdate(
+            req.params.id,
+            { $inc: { views: 1 } },
+            { new: true }
+        );
+
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
-
-        // Increment views
-        product.views += 1;
-        await product.save();
 
         res.json({ success: true, product });
     } catch (error) {

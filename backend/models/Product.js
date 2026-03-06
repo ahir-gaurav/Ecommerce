@@ -123,13 +123,27 @@ const productSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// Middleware to calculate total stock across all variants before saving
-productSchema.pre('save', function (next) {
+// Middleware to calculate total stock and enforce SKU uniqueness before saving
+productSchema.pre('save', async function (next) {
     if (this.variants && this.variants.length > 0) {
         this.totalStock = this.variants.reduce((sum, variant) => sum + (variant.stock || 0), 0);
-    } else {
-        // If no variants, totalStock might be manually set or default to 0
-        // We only overwrite if there are variants present
+
+        // Enforce SKU uniqueness at application level
+        const skus = this.variants.map(v => v.sku);
+        const uniqueSkus = new Set(skus);
+        if (skus.length !== uniqueSkus.size) {
+            return next(new Error('Duplicate SKUs found within product variants'));
+        }
+
+        // Check if any variant SKU exists in other products
+        const otherProduct = await mongoose.model('Product').findOne({
+            _id: { $ne: this._id },
+            'variants.sku': { $in: skus }
+        });
+
+        if (otherProduct) {
+            return next(new Error('One or more SKUs are already in use by another product'));
+        }
     }
     next();
 });
